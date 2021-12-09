@@ -2,32 +2,27 @@ import sys
 from collections import namedtuple
 
 import pygame
+from pygame_manager import PyGameManager
 from pygame.locals import *
 
 import color
 
-Dimensions = namedtuple('dimensions', 'width height')
 
-
-def initialize():
-    pygame.init()
-
-
-def terminate():
-    pygame.quit()
-    sys.exit()
-
-
-def draw_screen(screen):
+def draw_screen(pgm: PyGameManager):
     pygame.display.update()
-    pygame.draw.line(screen, color.BLACK, (0, 10), (20, 20))
+    screen = pgm.get_screen()
+    screen_dims = screen.get_size()
+    font = pgm.get_font()
+    antialias = False
+    dims_text = font.render(str(screen_dims), antialias, color.BLACK)
+    screen.blit(dims_text, (10, 10))
 
 
 def run():
-    initialize()
+    pgm = PyGameManager()
+    pgm.initialize()
 
-    screen_dims = (640, 480)
-    screen = pygame.display.set_mode(screen_dims, RESIZABLE)
+    screen = pgm.get_screen()
 
     running = True
     while running:
@@ -42,9 +37,9 @@ def run():
             #     if play_rect.collidepoint(mousex, mousey):
             #         choose_board()
 
-        draw_screen(screen)
+        draw_screen(pgm)
 
-    terminate()
+    pgm.terminate()
 
 
 if __name__ == "__main__":
