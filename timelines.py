@@ -11,6 +11,7 @@ import color
 def draw_screen():
     pygame.display.update()
     screen = pgm.get_screen()
+    screen.fill(color.WHITE)
     screen_dims = screen.get_size()
     font = pgm.get_font()
     antialias = False
@@ -21,7 +22,6 @@ def draw_screen():
 def run():
     pgm.initialize()
 
-    screen = pgm.get_screen()
 
     running = True
     while running:
@@ -29,8 +29,6 @@ def run():
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
                 running = False
-            elif event.type == VIDEORESIZE or event.type == VIDEOEXPOSE:
-                screen.fill(color.WHITE)  # handles window resize/minimize/maximize
             # if event.type == MOUSEBUTTONUP:
             #     mousex, mousey = event.pos
             #     if play_rect.collidepoint(mousex, mousey):

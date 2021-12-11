@@ -4,12 +4,13 @@ from pygame.locals import *
 
 
 class PyGameManager:
-    font = None
+    fonts = {}
     screen = None
 
     @staticmethod
     def initialize():
         pygame.init()
+        PyGameManager.get_screen()  # Init a screen so we have one.
 
     @staticmethod
     def terminate():
@@ -23,8 +24,9 @@ class PyGameManager:
         return PyGameManager.screen
 
     @staticmethod
-    def get_font():
-        if not PyGameManager.font:
+    def get_font(size: int = 10):
+        if size not in PyGameManager.fonts:
             print('Creating font')
-            PyGameManager.font = pygame.font.Font('freesansbold.ttf', 16)
-        return PyGameManager.font
+            font = pygame.font.Font('freesansbold.ttf', size)
+            PyGameManager.fonts[size] = font
+        return PyGameManager.fonts[size]
