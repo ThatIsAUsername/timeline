@@ -2,13 +2,13 @@ import sys
 from collections import namedtuple
 
 import pygame
-from pygame_manager import PyGameManager
+from pygame_manager import PyGameManager as pgm
 from pygame.locals import *
 
 import color
 
 
-def draw_screen(pgm: PyGameManager):
+def draw_screen():
     pygame.display.update()
     screen = pgm.get_screen()
     screen_dims = screen.get_size()
@@ -19,7 +19,6 @@ def draw_screen(pgm: PyGameManager):
 
 
 def run():
-    pgm = PyGameManager()
     pgm.initialize()
 
     screen = pgm.get_screen()
@@ -37,7 +36,7 @@ def run():
             #     if play_rect.collidepoint(mousex, mousey):
             #         choose_board()
 
-        draw_screen(pgm)
+        draw_screen()
 
     pgm.terminate()
 
