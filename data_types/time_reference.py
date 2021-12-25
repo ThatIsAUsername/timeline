@@ -72,7 +72,8 @@ class TimeReference:
                 month_min = 1
                 month_max = 12
                 day_min = 1
-                day_max = monthrange(year_max, month_max)
+                # monthrange returns a tuple of the weekday the month started, and the length of the month.
+                weekday, day_max = monthrange(year_max, month_max)
             else:
                 print("TODO: Handle record references")
                 # id_ref = tokens[0]
