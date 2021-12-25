@@ -15,7 +15,10 @@ class TimeReference:
         Args:
             absolute: Either the ID of another event or a string representation of a date, formatted as 'DD MMM YYYY'
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
+                            If so modified, then this event will start and end at the indicated time.
+                            If not modified, the beginning and end of this event will match those of the other event.
                         If a date string, the day and month are optional, but day is required if month is present.
+                        NOTE: If `absolute` is provided, then `before` and `after` are ignored.
             before: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
                         If a date string, the day and month are optional, but day is required if month is present.
@@ -25,14 +28,17 @@ class TimeReference:
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
         """
-        abs_min, abs_max = self._parse_input(absolute) if absolute else (None, None)
-        bef_min, bef_max = self._parse_input(before) if before else (None, None)
-        aft_min, aft_max = self._parse_input(after) if after else (None, None)
+        if absolute:
+            self.min, self.max = self._parse_input(absolute)
+        else:
+            abs_min, abs_max = (None, None)
+            bef_min, bef_max = self._parse_input(before) if before else (None, None)
+            aft_min, aft_max = self._parse_input(after) if after else (None, None)
 
-        min_list = [mm for mm in [abs_min, bef_min, aft_min] if mm is not None]
-        max_list = [mm for mm in [abs_max, bef_max, aft_max] if mm is not None]
-        self.min = min(min_list, key=lambda x: x.toordinal())
-        self.max = min(max_list, key=lambda x: x.toordinal())
+        # min_list = [mm for mm in [abs_min, bef_min, aft_min] if mm is not None]
+        # max_list = [mm for mm in [abs_max, bef_max, aft_max] if mm is not None]
+        # self.min = min(min_list, key=lambda x: x.toordinal())
+        # self.max = min(max_list, key=lambda x: x.toordinal())
         # self.max = None
         # self.afters = []
         # self.befores = []
@@ -56,7 +62,9 @@ class TimeReference:
             month_min = months.index(month_min.lower())
             year_max, month_max = year_min, month_min
             day_min = 1
-            day_max = monthrange(year_max, month_max)
+            # monthrange returns a tuple of the weekday the month started, and the length of the month.
+            weekday, day_max = monthrange(year_max, month_max)
+            print('maxes:', year_max, month_max, day_max)
         elif len(tokens) == 1:  # Expect YYYY or a record ID string.
             if tokens[0].isdigit():
                 year_min = int(tokens[0])
