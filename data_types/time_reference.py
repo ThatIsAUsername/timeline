@@ -64,7 +64,6 @@ class TimeReference:
             day_min = 1
             # monthrange returns a tuple of the weekday the month started, and the length of the month.
             weekday, day_max = monthrange(year_max, month_max)
-            print('maxes:', year_max, month_max, day_max)
         elif len(tokens) == 1:  # Expect YYYY or a record ID string.
             if tokens[0].isdigit():
                 year_min = int(tokens[0])
@@ -75,13 +74,6 @@ class TimeReference:
                 # monthrange returns a tuple of the weekday the month started, and the length of the month.
                 weekday, day_max = monthrange(year_max, month_max)
             else:
-                print("TODO: Handle record references")
-                # id_ref = tokens[0]
-                # if id_ref[0] == '^':
-                #     date_max = id_ref[1:]
-
-                # day_min, month_min, year_min = tokens*3
-                # day_max, month_max, year_max = day_min, month_min, year_min
                 return None, None
         elif len(tokens) == 0:
             return None, None

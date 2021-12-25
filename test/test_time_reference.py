@@ -57,8 +57,21 @@ class TestTimeReference(unittest.TestCase):
         tr = TimeReference(absolute=date_str)
 
         # Assert
-        # Since we initialized the TimeReference with a fixed range,
-        # we should be able to just see what they are.
         self.assertEqual(ans_beg_ord, tr.min.toordinal())
         self.assertEqual(ans_end_ord, tr.max.toordinal())
+
+    def test_absolute_reference(self):
+
+        # Arrange
+        date_str = "other_event"
+
+        # Since we provided a reference to another event, we can't determine the bounds at construction.
+        ans = None
+
+        # Act
+        tr = TimeReference(absolute=date_str)
+
+        # Assert
+        self.assertEqual(ans, tr.min)
+        self.assertEqual(ans, tr.max)
 
