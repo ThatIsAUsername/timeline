@@ -63,17 +63,36 @@ class TestTimeReference(unittest.TestCase):
     def test_absolute_reference(self):
 
         # Arrange
-        date_str = "other_event"
-
-        # Since we provided a reference to another event, we can't determine the bounds at construction.
-        ans = None
+        # By using a reference to the other event, we are saying that this
+        # TimeRef occurred sometime during the referenced event.
+        event_ref = "other_event"
+        ans_older = "$other_event"  # The other event must have begun before this TimeRef begun.
+        ans_later = "other_event^"  # The other event must have ended after this TimeRef ended.
 
         # Act
-        tr = TimeReference(absolute=date_str)
+        tr = TimeReference(absolute=event_ref)
 
         # Assert
-        self.assertEqual(ans, tr.min)
-        self.assertEqual(ans, tr.max)
+        self.assertEqual(tr.min, None)  # Since we just provided a reference, the min/max is not yet known.
+        self.assertEqual(tr.max, None)  # Since we just provided a reference, the min/max is not yet known.
+        self.assertIn(ans_older, tr._older_refs)
+        self.assertIn(ans_later, tr._later_refs)
+
+    def test_absolute_reference_pinned(self):
+
+        # Arrange
+        # By using a reference to the other event's beginning, we say that
+        # this ref begins and ends at that specific point in time.
+        event_ref = "$other_event"
+        ans_older = "$other_event"  # The other event must have begun before this TimeRef begun.
+        ans_later = "$other_event"  # This TimeRef must end when the other end begins as well.
+
+        # Act
+        tr = TimeReference(absolute=event_ref)
+
+        # Assert
+        self.assertIn(ans_older, tr._older_refs)
+        self.assertIn(ans_later, tr._later_refs)
 
     def test_relative_lists_dates(self):
 
