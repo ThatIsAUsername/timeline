@@ -9,7 +9,7 @@ class TimeReference:
     Represents a point in time that may have some uncertainty.
     """
 
-    def __init__(self, absolute: str = '', before: Union[str, List[str]] = '', after: Union[str, List[str]] = ''):
+    def __init__(self, absolute: str = '', older: Union[str, List[str]] = '', later: Union[str, List[str]] = ''):
         """
 
         Args:
@@ -19,29 +19,39 @@ class TimeReference:
                             If not modified, the beginning and end of this event will match those of the other event.
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: If `absolute` is provided, then `before` and `after` are ignored.
-            before: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
+            older: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
-            after: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
+            later: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
         """
+        self.min = None
+        self.max = None
+        self._older_refs = []
+        self._later_refs = []
+
         if absolute:
             self.min, self.max = self._parse_input(absolute)
         else:
-            abs_min, abs_max = (None, None)
-            bef_min, bef_max = self._parse_input(before) if before else (None, None)
-            aft_min, aft_max = self._parse_input(after) if after else (None, None)
-
-        # min_list = [mm for mm in [abs_min, bef_min, aft_min] if mm is not None]
-        # max_list = [mm for mm in [abs_max, bef_max, aft_max] if mm is not None]
-        # self.min = min(min_list, key=lambda x: x.toordinal())
-        # self.max = min(max_list, key=lambda x: x.toordinal())
-        # self.max = None
-        # self.afters = []
-        # self.befores = []
+            # Make sure any prior/later events are held in local lists.
+            if older:
+                print('older is', older)
+                temp_refs = older if type(older) is list else [older]
+                print('processing older refs:', temp_refs)
+                for tr in temp_refs:
+                    # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
+                    old_min, old_max = self._parse_input(tr)
+                    print('  min/max is', old_min, old_max)
+                    self._older_refs.append(old_max if old_max is not None else tr)
+            if later:
+                temp_refs = later if type(later) is list else [later]
+                for tr in temp_refs:
+                    # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
+                    l8r_min, l8r_max = self._parse_input(tr)
+                    self._later_refs.append(l8r_min if l8r_min is not None else tr)
 
     @staticmethod
     def _parse_input(input_str: str) -> Tuple[date, date]:
