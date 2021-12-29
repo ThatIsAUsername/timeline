@@ -74,6 +74,25 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              records=records,
                                              stack=stack,
                                              verbose=verbose)
+
+    # We've set start min/max and end min/max. Now enforce internal consistency.
+    # We can't define these relations in advance because that would create recursive dependencies.
+    cur = records[cid]
+
+    # If we don't have a limit on how late this event could start, or the latest possible start is after the end, fix.
+    if type(cur.start.max) is float or\
+            (type(cur.start.max) is date and type(cur.end.max) is date and cur.start.max > cur.end.max):
+        cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
+        if verbose:
+            print(f"[normalize_event] Setting {cid}.start.max to respect {cid}.end.max ({cur.start.max}).")
+
+    # if we don't have a limit on how early this event could end, or the earliest possible end is before the start, fix.
+    if type(cur.end.min) is float or \
+            (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
+        cur.end.min = cur.start.min  # It can't end earlier than the earliest possible start time (could still be -inf).
+        if verbose:
+            print(f"[normalize_event] Setting {cid}.end.min to respect {cid}.start.min ({cur.end.min}).")
+
     if verbose:
         print(f"[normalize_event] Finished normalizing {rec_id}")
 
