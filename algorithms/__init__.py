@@ -1,3 +1,3 @@
 
-from .normalize import normalize_event_list
+from .normalize import normalize_events
 from .convert import parse_record_list
