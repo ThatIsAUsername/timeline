@@ -3,7 +3,7 @@ from typing import Dict, Tuple
 from collections import deque
 from datetime import date
 
-from data_types import EventRecord, TimeReference
+from data_types import EventRecord, TimeReference, InconsistentTimeReferenceError, UnknownEventRecordError
 
 
 def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> Dict[str, EventRecord]:
@@ -86,12 +86,18 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
         if verbose:
             print(f"[normalize_event] Setting {cid}.start.max to respect {cid}.end.max ({cur.start.max}).")
 
+    if type(cur.start.min) is date and type(cur.start.max) is date and cur.start.min > cur.start.max:
+        raise InconsistentTimeReferenceError(f"start.min of {cid} ({cur.start.min}) is after start.max ({cur.start.max}).")
+
     # if we don't have a limit on how early this event could end, or the earliest possible end is before the start, fix.
     if type(cur.end.min) is float or \
             (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
         cur.end.min = cur.start.min  # It can't end earlier than the earliest possible start time (could still be -inf).
         if verbose:
             print(f"[normalize_event] Setting {cid}.end.min to respect {cid}.start.min ({cur.end.min}).")
+
+    if type(cur.end.min) is date and type(cur.end.max) is date and cur.end.min > cur.end.max:
+        raise InconsistentTimeReferenceError(f"end.min of {cid} ({cur.end.min}) is after end.max ({cur.end.max}).")
 
     if verbose:
         print(f"[normalize_event] Finished normalizing {rec_id}")
@@ -152,8 +158,7 @@ def bind_reference_boundary(cid: str,
             constraint_id = constraint.strip('$^')
 
             if constraint_id not in records:  # Sanity check.
-                print(f"[bind_reference_boundary] ERROR: Record {cid} references unknown record {constraint_id}. Skipping")
-                return False
+                raise UnknownEventRecordError(f"Record {cid} references unknown record {constraint_id}.")
 
             constraint_record = records[constraint_id]
             # if bind_min:

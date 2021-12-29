@@ -4,9 +4,8 @@ import unittest
 from datetime import date
 import math
 
-from data_types import months
 from algorithms import normalize_events, parse_record_list
-from data_types import EventRecord
+from data_types import months, EventRecord, InconsistentTimeReferenceError, UnknownEventRecordError
 
 
 class TestNormalizeEvent(unittest.TestCase):
@@ -107,3 +106,33 @@ class TestNormalizeEvent(unittest.TestCase):
         self.assertEqual(rec.start.max, rec_end)
         self.assertEqual(rec.end.min, rec_end)
         self.assertEqual(rec.end.max, rec_end)
+
+    def test_end_before_start(self):
+
+        # Arrange
+        # Set up an impossible timeline:  <------end-----| June 5 | June 6 |-----start------>
+        rec_id = 'broken'
+        record_list = [{'name': 'Broken', 'id': rec_id, 'start_after': '6 Jun 2040', 'end_before': '5 Jun 2040'}]
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        with self.assertRaises(InconsistentTimeReferenceError) as context:
+            normalize_events(records)
+
+        # Assert
+        self.assertIn(rec_id, str(context.exception))
+
+    def test_unknown_record(self):
+
+        # Arrange
+        # Set up an impossible timeline:  <------end-----| June 5 | June 6 |-----start------>
+        rec_id = 'broken_ref'
+        record_list = [{'name': 'Broken Ref', 'id': rec_id, 'start_after': 'unknown_record'}]
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        with self.assertRaises(UnknownEventRecordError) as context:
+            normalize_events(records)
+
+        # Assert
+        self.assertIn(rec_id, str(context.exception))
