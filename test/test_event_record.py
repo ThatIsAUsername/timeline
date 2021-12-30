@@ -1,7 +1,6 @@
 
 import unittest
 
-import yaml
 from data_types import TimeReference, EventRecord
 
 
@@ -10,7 +9,11 @@ class TestEventRecord(unittest.TestCase):
     def test_simple_construction(self):
 
         # Arrange
-        record_data = {'name': 'Life', 'id': 'life', 'start_before': 'birth', 'end': 'death'}
+        record_data = {'name': 'Life',
+                       'id': 'life',
+                       'start_before': 'birth',
+                       'end': 'death',
+                       'sources': ['source 1', 'source 2']}
 
         # Act
         er = EventRecord(record_data)
@@ -26,3 +29,6 @@ class TestEventRecord(unittest.TestCase):
         self.assertEqual(type(er.end), TimeReference)
         self.assertIn('^death', er.end._older_refs)
         self.assertIn('death$', er.end._later_refs)
+        self.assertEqual(type(er.sources), list)
+        self.assertIn('source 1', er.sources)
+        self.assertIn('source 2', er.sources)
