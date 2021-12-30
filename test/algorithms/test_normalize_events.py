@@ -3,12 +3,13 @@ from typing import Dict
 import unittest
 from datetime import date
 import math
+import yaml
 
 from algorithms import normalize_events, parse_record_list
 from data_types import months, EventRecord, InconsistentTimeReferenceError, UnknownEventRecordError
 
 
-class TestNormalizeEvent(unittest.TestCase):
+class TestNormalizeEvents(unittest.TestCase):
 
     def test_simple_case(self):
 
@@ -122,10 +123,71 @@ class TestNormalizeEvent(unittest.TestCase):
         # Assert
         self.assertIn(rec_id, str(context.exception))
 
+    def test_overlap_start_end(self):
+
+        # Arrange
+        rec_id = 'overlap'
+        record_list = [{'name': 'Overlap', 'id': rec_id, 'start_before': '6 Jun 2040', 'end_before': '7 Jun 2040'}]
+        start_min_ans = -math.inf
+        start_max_ans = date(year=2040, month=6, day=6)
+        end_min_ans = -math.inf  # Event cannot end before starting... but it could start anytime in the past
+        end_max_ans = date(year=2040, month=6, day=7)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_fixed_start_bounded_end(self):
+
+        # Arrange
+        rec_id = 'bounded'
+        record_list = [{'name': 'Bounded', 'id': rec_id, 'start': '6 Jun 2040', 'end_before': '7 Jun 2040'}]
+        start_min_ans = date(year=2040, month=6, day=6)
+        start_max_ans = start_min_ans  # fixed-point time reference
+        end_min_ans = start_min_ans  # Can't end before start.min
+        end_max_ans = date(year=2040, month=6, day=7)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_fixed_end_bounded_start(self):
+
+        # Arrange
+        rec_id = 'bounded'
+        record_list = [{'name': 'Bounded', 'id': rec_id, 'start_after': '6 Jun 2040', 'end': '7 Jun 2040'}]
+        start_min_ans = date(year=2040, month=6, day=6)
+        end_ans = date(year=2040, month=6, day=7)
+        start_max_ans = end_ans  # Can't start after it ends
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_ans)
+        self.assertEqual(rec.end.max, end_ans)
+
     def test_unknown_record(self):
 
         # Arrange
-        # Set up an impossible timeline:  <------end-----| June 5 | June 6 |-----start------>
         rec_id = 'broken_ref'
         record_list = [{'name': 'Broken Ref', 'id': rec_id, 'start_after': 'unknown_record'}]
 
@@ -136,3 +198,23 @@ class TestNormalizeEvent(unittest.TestCase):
 
         # Assert
         self.assertIn(rec_id, str(context.exception))
+
+    def test_sample_file(self):
+
+        # Arrange
+        filename = "test/data/test_sample.yaml"
+        with open(filename) as file:
+            loaded = yaml.safe_load(file)
+        record_list = loaded["Records"]
+
+        # Act
+        records = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        self.assertEqual(len(records), 10)
+        for rid in records:
+            self.assertNotEqual(records[rid].start.min, None)
+            self.assertNotEqual(records[rid].start.max, None)
+            self.assertNotEqual(records[rid].end.min, None)
+            self.assertNotEqual(records[rid].end.max, None)

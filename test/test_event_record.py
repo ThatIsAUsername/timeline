@@ -24,5 +24,5 @@ class TestEventRecord(unittest.TestCase):
         self.assertEqual(type(er.start.max), type(None))  # No absolute dates provided.
         self.assertIn('birth', er.start._later_refs)
         self.assertEqual(type(er.end), TimeReference)
-        self.assertIn('$death', er.end._older_refs)
-        self.assertIn('death^', er.end._later_refs)
+        self.assertIn('^death', er.end._older_refs)
+        self.assertIn('death$', er.end._later_refs)

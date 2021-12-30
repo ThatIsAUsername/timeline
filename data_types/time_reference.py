@@ -38,14 +38,14 @@ class TimeReference:
             if len(tokens) == 1 and not tokens[0].isdigit():
                 # This must be a reference to another event.
                 tok = tokens[0]
-                if tok[0] == '$' or tok[-1] == '^':
+                if tok[0] == '^' or tok[-1] == '$':
                     # If the ref ID is justified, just keep as is and add to both lists.
                     self._older_refs.append(tok)
                     self._later_refs.append(tok)
                 else:
                     # If it is not justified, justify it into the relative event lists.
-                    self._older_refs.append(f"${tokens[0]}")
-                    self._later_refs.append(f"{tokens[0]}^")
+                    self._older_refs.append(f"^{tokens[0]}")
+                    self._later_refs.append(f"{tokens[0]}$")
             else:
                 # Assume this represents a date string.
                 self.min, self.max = self._parse_input(tokens)

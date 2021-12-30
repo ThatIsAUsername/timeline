@@ -34,6 +34,18 @@ def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> D
 
 
 def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool = True):
+    """
+    Determine fixed dates for all TimeReference boundaries for event rec_id.
+    This may require recursively resolving bounds for any other events this one references.
+
+    Args:
+        rec_id: ID of the EventRecord to resolve.
+        records: Dict of all EventRecords for reference.
+        verbose: Whether to print progress.
+
+    Returns:
+        None - TODO: Return a list of all recursively-resolved events so we can avoid extra calls?
+    """
     stack = deque()
     stack.append(rec_id)
     while len(stack) > 0:
@@ -75,29 +87,29 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              stack=stack,
                                              verbose=verbose)
 
-    # We've set start min/max and end min/max. Now enforce internal consistency.
-    # We can't define these relations in advance because that would create recursive dependencies.
-    cur = records[cid]
+        # We've set start min/max and end min/max. Now enforce internal consistency.
+        # We can't define these relations in advance because that would create recursive dependencies.
+        cur = records[cid]
 
-    # If we don't have a limit on how late this event could start, or the latest possible start is after the end, fix.
-    if type(cur.start.max) is float or\
-            (type(cur.start.max) is date and type(cur.end.max) is date and cur.start.max > cur.end.max):
-        cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
-        if verbose:
-            print(f"[normalize_event] Setting {cid}.start.max to respect {cid}.end.max ({cur.start.max}).")
+        # Make sure the start can't be later than the end.
+        if type(cur.start.max) is float or\
+                (type(cur.start.max) is date and type(cur.end.max) is date and cur.start.max > cur.end.max):
+            cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
+            if verbose:
+                print(f"[normalize_event] Setting {cid}.start.max to respect {cid}.end.max ({cur.start.max}).")
 
-    if type(cur.start.min) is date and type(cur.start.max) is date and cur.start.min > cur.start.max:
-        raise InconsistentTimeReferenceError(f"start.min of {cid} ({cur.start.min}) is after start.max ({cur.start.max}).")
+        if type(cur.start.min) is date and type(cur.start.max) is date and cur.start.min > cur.start.max:
+            raise InconsistentTimeReferenceError(f"start.min of {cid} ({cur.start.min}) is after start.max ({cur.start.max}).")
 
-    # if we don't have a limit on how early this event could end, or the earliest possible end is before the start, fix.
-    if type(cur.end.min) is float or \
-            (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
-        cur.end.min = cur.start.min  # It can't end earlier than the earliest possible start time (could still be -inf).
-        if verbose:
-            print(f"[normalize_event] Setting {cid}.end.min to respect {cid}.start.min ({cur.end.min}).")
+        # Make sure the end can't be earlier than the start.
+        if type(cur.end.min) is float or \
+                (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
+            cur.end.min = cur.start.min  # It can't end earlier than the earliest possible start time (could still be -inf).
+            if verbose:
+                print(f"[normalize_event] Setting {cid}.end.min to respect {cid}.start.min ({cur.end.min}).")
 
-    if type(cur.end.min) is date and type(cur.end.max) is date and cur.end.min > cur.end.max:
-        raise InconsistentTimeReferenceError(f"end.min of {cid} ({cur.end.min}) is after end.max ({cur.end.max}).")
+        if type(cur.end.min) is date and type(cur.end.max) is date and cur.end.min > cur.end.max:
+            raise InconsistentTimeReferenceError(f"end.min of {cid} ({cur.end.min}) is after end.max ({cur.end.max}).")
 
     if verbose:
         print(f"[normalize_event] Finished normalizing {rec_id}")
@@ -153,39 +165,41 @@ def bind_reference_boundary(cid: str,
         if type(constraint) is date:
             resolved_constraints.append(constraint)
         elif type(constraint) is str:
-            fix_begin = constraint[0] == '$'
-            fix_end = constraint[-1] == '^'
-            constraint_id = constraint.strip('$^')
+            fix_end = constraint[-1] == '$'
+            fix_begin = constraint[0] == '^'
+            constraint_id = constraint.strip('^$')
 
             if constraint_id not in records:  # Sanity check.
-                raise UnknownEventRecordError(f"Record {cid} references unknown record {constraint_id}.")
+                raise UnknownEventRecordError(f"Record {cid} references unknown record '{constraint_id}'.")
 
             constraint_record = records[constraint_id]
             # if bind_min:
-            # $old_ref - cref's min must be no earlier than constraint_record's start.min
-            # old_ref^ - cref's min must be no earlier than constraint_record's end.min
+            # ^old_ref - cref's min must be no earlier than constraint_record's start.min
+            # old_ref$ - cref's min must be no earlier than constraint_record's end.min
             # old_ref - cref's min must be no earlier than constraint_record's end.min
             # if not bind_min:
-            # $old_ref - cref's max must be no later than constraint_record's start.max
-            # old_ref^ - cref's max must be no later than constraint_record's end.max
+            # ^old_ref - cref's max must be no later than constraint_record's start.max
+            # old_ref$ - cref's max must be no later than constraint_record's end.max
             # old_ref - cref's max must be no later than constraint_record's start.max
+            constraint_desc = ''
             if bind_min:  # if binding a min, a ^ (end-of-range) bound is the same as no bound.
                 relevant_boundary = constraint_record.start.min if fix_begin else constraint_record.end.min
+                constraint_desc = f"{constraint_id}.start.min" if fix_begin else f"{constraint_id}.end.min"
             else:  # if binding a max, a $ (start-of-range) bound is the same as no bound.
                 relevant_boundary = constraint_record.end.max if fix_end else constraint_record.start.max
+                constraint_desc = f"{constraint_id}.end.max" if fix_begin else f"{constraint_id}.start.max"
 
             if relevant_boundary is None:  # The other records dates are not yet known.
                 stack.append(cid)  # Put the current record ID back on the stack for now.
                 stack.append(constraint_id)  # Also push this constraining record onto the stack to figure out first.
                 if verbose:
-                    print(f"[bind_reference_boundary] Record {cid} references unprocessed record {constraint_id}. Delaying.")
+                    print(f"[bind_reference_boundary] Record '{cid}' references unprocessed record '{constraint_id}'. Delaying.")
                 return False  # We don't have enough info yet. Hold off for now.
             else:  # The other record's relevant date is known; hold onto it.
                 resolved_constraints.append(relevant_boundary)  # This should either be a date or +/-inf.
                 if verbose:
-                    print(f"[bind_reference_boundary] Record {cid}.{desc} must be {'after' if bind_min else 'before'} "
-                          f"{constraint_id}{'.start' if fix_begin else '.end' if fix_end else ''}."
-                          f"{'min' if bind_min else 'max'} ({relevant_boundary})")
+                    print(f"[bind_reference_boundary] Record '{cid}' {desc} must be {'after' if bind_min else 'before'}"
+                          f" {constraint_desc} ({relevant_boundary}).")
 
     # If we made it this far, then resolved_constraints should be a list of dates, and maybe some +/-infinities.
     bind_value = None
@@ -193,11 +207,11 @@ def bind_reference_boundary(cid: str,
         # Unconstrained boundaries are just set to the extremes.
         bind_value = -math.inf if bind_min else math.inf
         if verbose:
-            print(f"[bind_reference_boundary] No constraints defined for {cid}'s {desc}. Setting to {bind_value}.")
+            print(f"[bind_reference_boundary] No constraints defined for '{cid}' {desc}. Setting to {bind_value}.")
     elif len(resolved_constraints) == 1:
         bind_value = resolved_constraints[0]
         if verbose:
-            print(f"[bind_reference_boundary] Setting {cid}'s {desc} to {bind_value}")
+            print(f"[bind_reference_boundary] Setting '{cid}' {desc} to {bind_value}")
     else:
         # Constraints can be a date or +/-inf if the constraining ref was itself unconstrained.
         # Ignore non-dates if any dates exist.
@@ -205,15 +219,15 @@ def bind_reference_boundary(cid: str,
         if len(real_dates) == 0:
             bind_value = resolved_constraints[0]  # Only possibility here should be +/-math.inf.
             if verbose:
-                print(f"[bind_reference_boundary] No real constraints found for {cid}'s {desc}. Setting to {bind_value}.")
+                print(f"[bind_reference_boundary] No real constraints found for '{cid}' {desc}. Setting to {bind_value}.")
         else:
             # Choose the best available constraint as our current bound.
             bind_value = max(real_dates) if bind_min else min(real_dates)
             if verbose:
-                print(f"[bind_reference_boundary] {cid}'s {desc} set to {bind_value}")
+                print(f"[bind_reference_boundary] '{cid}' {desc} set to {bind_value}")
 
     # At this point, we should have properly defined bind_value as a date or as -math.inf.
-    assert bind_value is not None, f'Failed to set {desc} for {cid}!'
+    assert bind_value is not None, f"Failed to set '{cid}' {desc}!"
     if bind_min:
         cref.min = bind_value
     else:

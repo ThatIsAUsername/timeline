@@ -66,8 +66,8 @@ class TestTimeReference(unittest.TestCase):
         # By using a reference to the other event, we are saying that this
         # TimeRef occurred sometime during the referenced event.
         event_ref = "other_event"
-        ans_older = "$other_event"  # The other event must have begun before this TimeRef begun.
-        ans_later = "other_event^"  # The other event must have ended after this TimeRef ended.
+        ans_older = "^other_event"  # The other event must have begun before this TimeRef begun.
+        ans_later = "other_event$"  # The other event must have ended after this TimeRef ended.
 
         # Act
         tr = TimeReference(absolute=event_ref)
@@ -83,9 +83,9 @@ class TestTimeReference(unittest.TestCase):
         # Arrange
         # By using a reference to the other event's beginning, we say that
         # this ref begins and ends at that specific point in time.
-        event_ref = "$other_event"
-        ans_older = "$other_event"  # The other event must have begun before this TimeRef begun.
-        ans_later = "$other_event"  # This TimeRef must end when the other end begins as well.
+        event_ref = "^other_event"
+        ans_older = "^other_event"  # The other event must have begun before this TimeRef begun.
+        ans_later = "^other_event"  # This TimeRef must end when the other end begins as well.
 
         # Act
         tr = TimeReference(absolute=event_ref)

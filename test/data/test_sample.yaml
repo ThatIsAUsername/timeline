@@ -1,0 +1,81 @@
+# List of timeline records
+# Possible fields for each entry:
+#
+# name (required)
+# id (optional - used for cross-referencing)
+# start (formatted as [day] [MON] Year)
+# end (formatted as [day] [MON] Year)
+# start_before (date or other event)
+# start_after (date or other event)
+# end_before (date or other event)
+# end_after (date or other event)
+# duration (in days)
+# tags (one or more strings)
+# sources (one or more numbers)
+#
+# The start*/end* tags can accept ids of other entries within this file, augmented by ^/& modifiers.
+# E.g given two events, A and B:
+# name: A
+# end_before: B   # Event A ends before event B begins
+# end_before: ^B  # Event A ends before event B begins
+# end_before: B&  # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B         # Event A ends when event B begins
+# end: B&         # Event A ends when event B ends
+# end: B          # Event A ends sometime during event B
+# end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B    # Event A ends after event B ends
+# end_after: B&   # Event A ends after event B ends
+
+# Fictitious person's timeline to test things.
+
+Records:
+- name: Life
+  id: life
+  start_before: birth
+  end: death
+
+- name: Birth
+  id: birth
+  start: 1 Jan 1900
+  end: 1 Jan 1900
+
+- name: High School
+  id: high_school
+  start: Aug 1914
+  end: May 1918
+
+- name: First Car
+  id: first_car
+  start_before: high_school$
+  #start_after: ^high_school + 2y
+  end: car_accident
+
+- name: Car Accident
+  id: car_accident
+  start: 19 APR 1920
+  duration: 0
+
+- name: Second Car
+  id: second_car
+  start_after: first_car
+  start_before: college$
+  end_after: ^first_job
+
+- name: College
+  id: college
+  start: Aug 1918
+
+- name: Third Car
+  id: third_car
+  start_after:
+  - second_car  # Got third car after second car.
+  - ^first_job  # Got third car after starting a job.
+
+- name: First Job
+  id: first_job
+  start: Oct 1918
+
+- name: Death
+  id: death
+  start_after: birth
+  end: 29 Jun 1975
