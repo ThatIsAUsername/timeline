@@ -6,9 +6,10 @@ from pygame_manager import PyGameManager as pgm
 from pygame.locals import *
 
 import color
+from data_types import Timeline
 
 
-def draw_screen():
+def draw_screen(timeline: Timeline):
     pygame.display.update()
     screen = pgm.get_screen()
     screen.fill(color.WHITE)
@@ -22,6 +23,8 @@ def draw_screen():
 def run():
     pgm.initialize()
 
+    timeline = Timeline()
+    timeline.load("data/rev_war.yaml")
 
     running = True
     while running:
@@ -34,7 +37,7 @@ def run():
             #     if play_rect.collidepoint(mousex, mousey):
             #         choose_board()
 
-        draw_screen()
+        draw_screen(timeline)
 
     pgm.terminate()
 

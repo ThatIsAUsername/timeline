@@ -81,13 +81,13 @@ class TimeReference:
         if len(tokens) == 3:  # Expect DD MMM YYYY (e.g. 21 Jan 2018)
             day_min, month_min, year_min = tokens
             day_min = int(day_min)
-            month_min = months.index(month_min.lower())
+            month_min = months.index(month_min[:3].lower())
             year_min = int(year_min)
             day_max, month_max, year_max = day_min, month_min, year_min
         elif len(tokens) == 2:  # Expect MMM YYYY
             month_min, year_min = tokens
             year_min = int(year_min)
-            month_min = months.index(month_min.lower())
+            month_min = months.index(month_min[:3].lower())
             year_max, month_max = year_min, month_min
             day_min = 1
             # monthrange returns a tuple of the weekday the month started, and the length of the month.
