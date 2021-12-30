@@ -1,8 +1,7 @@
 from typing import Dict
 import yaml
 
-from algorithms import parse_record_list
-from algorithms import normalize_events
+import algorithms
 
 
 class Timeline:
@@ -13,11 +12,11 @@ class Timeline:
         with open(filename) as file:
             loaded = yaml.load(file, Loader=yaml.BaseLoader)
 
-        # Sources should just load as a dict.
-        self.records = parse_record_list(loaded['Records'])
+        # Parse the raw record data into a set of EventRecord objects, mapped by event ID.
+        self.records = algorithms.parse_record_list(loaded['Records'])
 
         # Process the events to make sure all bounds are well-defined.
-        normalize_events(self.records)
+        algorithms.normalize_events(self.records)
 
     def get_records(self) -> Dict:
         return self.records

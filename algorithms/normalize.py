@@ -1,5 +1,6 @@
+
 import math
-from typing import Dict, Tuple
+from typing import Dict
 from collections import deque
 from datetime import date
 
