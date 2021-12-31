@@ -5,3 +5,7 @@ class InconsistentTimeReferenceError(Exception):
 
 class UnknownEventRecordError(Exception):
     pass
+
+
+class IncoherentTimelineError(Exception):
+    pass
