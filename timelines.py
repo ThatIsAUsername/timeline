@@ -24,7 +24,7 @@ def run():
     pgm.initialize()
 
     timeline = Timeline()
-    timeline.load("data/rev_war.yaml")
+    timeline.load_from_file("data/rev_war.yaml")
 
     running = True
     while running:

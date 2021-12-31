@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 import yaml
 import math
 from datetime import date
@@ -13,12 +13,16 @@ class Timeline:
         self.min = -math.inf
         self.max = math.inf
 
-    def load(self, filename: str):
+    def load_from_file(self, filename: str):
         with open(filename) as file:
             loaded = yaml.load(file, Loader=yaml.BaseLoader)
 
+        self.load_from_record_list(loaded['Records'])
+
+    def load_from_record_list(self, records: List[Dict]):
+
         # Parse the raw record data into a set of EventRecord objects, mapped by event ID.
-        self.records = algorithms.parse_record_list(loaded['Records'])
+        self.records = algorithms.parse_record_list(records)
 
         # Process the events to make sure all bounds are well-defined.
         algorithms.normalize_events(self.records)
