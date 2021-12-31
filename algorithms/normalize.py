@@ -1,6 +1,6 @@
 
 import math
-from typing import Dict
+from typing import Dict, List
 from collections import deque
 from datetime import date
 
@@ -20,21 +20,21 @@ def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> D
     Returns:
         The record list after all dates have been made concrete to the extent possible.
     """
+    resolved = []
     for rec_id in records:
+        if rec_id in resolved:
+            # If this record was already done on a previous pass (because another record
+            # refers to it) then don't bother trying to reprocess it.
+            continue
         if verbose:
-            print(f"[normalize_event_list] Normalizing {rec_id}")
-        normalize_event(rec_id=rec_id, records=records, verbose=verbose)
-        # is min not set?
-        #   Throw rid into stack
-        #   get after refs, append to stack also
-        #   for
-        # is max set?
-    # Pull first event.
-    # Check min
+            print(f"[normalize_event_list] Normalizing `{rec_id}`")
+        dones = normalize_event(rec_id=rec_id, records=records, verbose=verbose)
+        resolved.extend(dones)
+
     return records
 
 
-def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool = True):
+def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool = True) -> List[str]:
     """
     Determine fixed dates for all TimeReference boundaries for event rec_id.
     This may require recursively resolving bounds for any other events this one references.
@@ -45,14 +45,15 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
         verbose: Whether to print progress.
 
     Returns:
-        None - TODO: Return a list of all recursively-resolved events so we can avoid extra calls?
+        A list of all recursively-resolved events so we can avoid extra calls?
     """
     stack = deque()
     stack.append(rec_id)
+    resolved = []
     while len(stack) > 0:
         cid = stack.pop()
         if verbose:
-            print(f"[normalize_event] checking bounds for {cid}")
+            print(f"[normalize_event] checking bounds for `{cid}`")
 
         date_found = bind_reference_boundary(cid=cid,
                                              bind_start=True,
@@ -97,23 +98,27 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                 (type(cur.start.max) is date and type(cur.end.max) is date and cur.start.max > cur.end.max):
             cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
             if verbose:
-                print(f"[normalize_event] Setting {cid}.start.max to respect {cid}.end.max ({cur.start.max}).")
+                print(f"[normalize_event] Setting `{cid}` start.max to respect `{cid}` end.max ({cur.start.max}).")
 
         if type(cur.start.min) is date and type(cur.start.max) is date and cur.start.min > cur.start.max:
-            raise InconsistentTimeReferenceError(f"start.min of {cid} ({cur.start.min}) is after start.max ({cur.start.max}).")
+            raise InconsistentTimeReferenceError(f"start.min of `{cid}` ({cur.start.min}) is after start.max ({cur.start.max}).")
 
         # Make sure the end can't be earlier than the start.
         if type(cur.end.min) is float or \
                 (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
-            cur.end.min = cur.start.min  # It can't end earlier than the earliest possible start time (could still be -inf).
+            cur.end.min = cur.start.min  # End can't be before the earliest possible start time (could still be -inf).
             if verbose:
-                print(f"[normalize_event] Setting {cid}.end.min to respect {cid}.start.min ({cur.end.min}).")
+                print(f"[normalize_event] Setting `{cid}` end.min to respect `{cid}` start.min ({cur.end.min}).")
 
         if type(cur.end.min) is date and type(cur.end.max) is date and cur.end.min > cur.end.max:
-            raise InconsistentTimeReferenceError(f"end.min of {cid} ({cur.end.min}) is after end.max ({cur.end.max}).")
+            raise InconsistentTimeReferenceError(f"end.min of `{cid}` ({cur.end.min}) is after end.max ({cur.end.max}).")
 
-    if verbose:
-        print(f"[normalize_event] Finished normalizing {rec_id}")
+        # This record is now done; we don't have to redo it on a future pass.
+        resolved.append(cid)
+        if verbose:
+            print(f"[normalize_event] Finished normalizing `{cid}`")
+
+    return resolved
 
 
 def bind_reference_boundary(cid: str,
