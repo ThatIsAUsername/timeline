@@ -3,7 +3,7 @@ import yaml
 import math
 from datetime import date
 
-from data_types import IncoherentTimelineError
+from data_types import EventRecord, IncoherentTimelineError
 import algorithms
 
 
@@ -46,5 +46,5 @@ class Timeline:
         if type(self.min) is not date:  # min and max be the same, but if one is real the other should be also.
             raise IncoherentTimelineError("[timeline.load] Failed to find any well-defined dates")
 
-    def get_records(self) -> Dict:
+    def get_records(self) -> Dict[str, EventRecord]:
         return self.records
