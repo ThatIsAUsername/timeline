@@ -6,3 +6,4 @@ from .time_reference import TimeReference
 from .event_record import EventRecord
 from .exceptions import InconsistentTimeReferenceError, UnknownEventRecordError, IncoherentTimelineError
 from .timeline import Timeline
+from .timeview import Timeview
