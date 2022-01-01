@@ -26,11 +26,6 @@
 # end_after: B&   # Event A ends after event B ends
 
 Records:
-- name: Columbus Voyage to America
-  start: Aug 1492
-  end: Oct 1492
-  tags: USA
-
 - name: Boston Massacre
   start: 5 March 1770
   tags: USA War England
