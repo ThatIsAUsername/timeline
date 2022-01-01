@@ -24,7 +24,7 @@ class PyGameManager:
         return PyGameManager.screen
 
     @staticmethod
-    def get_font(size: int = 10):
+    def get_font(size: int = 12):
         if size not in PyGameManager.fonts:
             print('Creating font')
             font = pygame.font.Font('freesansbold.ttf', size)

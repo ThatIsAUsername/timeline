@@ -44,29 +44,34 @@ Records:
   start: 19 APR 1775
   end: 19 APR 1775
   tags: USA War England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: Bunker Hill
   start: 17 JUN 1775
   end: 17 JUN 1775
   tags: USA War England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: Articles of Confederation
   start: 15 March 1777
   end: 15 March 1777
   tags: USA England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: American Alliance with France
   start: 4 May 1778
   tags: USA FR England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: French reinforcements under Rochambeau
   start: 11 JUL 1780
   tags: USA FR War England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: Siege of Yorktown
   start: 28 Sep 1781
@@ -77,20 +82,20 @@ Records:
   start: 19 OCT 1781
   end: 19 OCT 1781
   tags: USA War England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: Cessation of Hostilities
   id: war_end
   start: 4 Feb 1783
   tags: USA War England
-  sources: 1
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
 
 - name: George Washington Presidency
   start: 30 Apr 1789
   end: 1797
   tags: USA
-  sources: 1 2
-
-Sources:
-  1: https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
-  2: https://en.wikipedia.org/wiki/George_Washington
+  sources:
+    - https://www.nps.gov/waro/learn/historyculture/timeline-of-the-war-for-independence.htm
+    - https://en.wikipedia.org/wiki/George_Washington

@@ -1,5 +1,5 @@
 
-from typing import Union
+from typing import List, Union
 
 from datetime import date
 from data_types import Timeline, TimeReference, EventRecord
@@ -9,8 +9,8 @@ class Timeview:
 
     def __init__(self, timeline: Timeline):
         self.timeline = timeline
-        self.min = self.timeline.min
-        self.max = self.timeline.max
+        self.min: date = self.timeline.min
+        self.max: date = self.timeline.max
 
     def contains(self, timelike: Union[date, TimeReference, EventRecord]) -> bool:
         if type(timelike) is date:
@@ -56,3 +56,14 @@ class Timeview:
             True if the EventRecord would be at least partly visible within this Timeview, else False.
         """
         return self.contains_reference(rec.start) or self.contains_reference(rec.end)
+
+    def get_visible(self) -> List[EventRecord]:
+        """
+        Returns:
+            A list of all records from this view's Timeline that are also currently within the view.
+        """
+        visible_records = []
+        for rec in self.timeline.get_records().values():
+            if self.contains(rec):
+                visible_records.append(rec)
+        return visible_records
