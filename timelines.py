@@ -63,7 +63,7 @@ def draw_timeview(surf: pygame.Surface, timeview: Timeview):
     for li in label_infos:
         lr = li.label_rect
         count = 0
-        while lr.collidelist(deconflicted_rects) is not -1 and count < 10:
+        while lr.collidelist(deconflicted_rects) != -1 and count < 10:
             count += 1
             # Move lr up to try and avoid.
             lr.bottomleft = (lr.x, lr.y-lr.height*1.5)
@@ -121,6 +121,19 @@ def run():
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
                 running = False
+            if event.type == MOUSEWHEEL:
+
+                mx, my = pygame.mouse.get_pos()
+                width, height = pgm.get_screen().get_size()
+                focus_date_ordinal = interpolate(mx, (0, width), (timeview.min.toordinal(), timeview.max.toordinal()))
+                focus_date_ordinal = round(focus_date_ordinal)
+                focus_date = date.fromordinal(focus_date_ordinal)
+                wheel_forward = event.y > 0
+                wheel_backward = event.y < 0
+                if wheel_forward:
+                    timeview.zoom_in(focus_date)
+                if wheel_backward:
+                    timeview.zoom_out(focus_date)
             # if event.type == MOUSEBUTTONUP:
             #     mousex, mousey = event.pos
             #     if play_rect.collidepoint(mousex, mousey):

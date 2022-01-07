@@ -1,11 +1,15 @@
 
 from typing import List, Union
 
-from datetime import date
+from datetime import date, timedelta
 from data_types import Timeline, TimeReference, EventRecord
 
 
 class Timeview:
+
+    # Determines how much to adjust the view when zooming.
+    # Values must be [0-1], where lower numbers cause more change.
+    ZOOM_RATIO = 0.8
 
     def __init__(self, timeline: Timeline):
         self.timeline = timeline
@@ -67,3 +71,46 @@ class Timeview:
             if self.contains(rec):
                 visible_records.append(rec)
         return visible_records
+
+    def zoom_in(self, focus: date) -> None:
+        """
+        Changes the view's min and/or max to narrow the view on the provided date.
+        Args:
+            focus: The date to zoom in towards.
+
+        Returns:
+            None
+        """
+        assert self.contains(focus), "Cannot zoom on a date outside the view"
+
+        min_ord = self.min.toordinal()
+        max_ord = self.max.toordinal()
+        foc_ord = focus.toordinal()
+
+        lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
+        hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
+
+        self.min = self.min + lo_shift
+        self.max = self.max - hi_shift
+
+    def zoom_out(self, focus: date) -> None:
+        """
+        Changes the view's min and/or max to widen the view around the provided date.
+        Args:
+            focus: The date to zoom out from.
+
+        Returns:
+            None
+        """
+        assert self.contains(focus), "Cannot zoom on a date outside the view"
+
+        min_ord = self.min.toordinal()
+        max_ord = self.max.toordinal()
+        foc_ord = focus.toordinal()
+
+        zoom_frac = 1/(1-self.ZOOM_RATIO)
+        lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
+        hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
+
+        self.min = self.min - hi_shift
+        self.max = self.max + lo_shift
