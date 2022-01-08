@@ -1,8 +1,15 @@
 
+import math
 from typing import List, Union
+from collections import namedtuple
+
+import pygame
+from pygame_manager import PyGameManager as pgm
+import color
 
 from datetime import date, timedelta
 from data_types import Timeline, TimeReference, EventRecord
+from algorithms import interpolate
 
 
 class Timeview:
@@ -114,3 +121,81 @@ class Timeview:
 
         self.min = self.min - hi_shift
         self.max = self.max + lo_shift
+
+    def render(self, surf: pygame.Surface):
+
+        # First draw the background
+        surf.fill(color.WHITE)
+
+        width, height = surf.get_size()
+        time_range: timedelta = self.max - self.min
+        time_range_s = time_range.total_seconds()
+
+        buffer_pct = 0.02
+        buffer_px = int(width*buffer_pct)
+        # buffer_s = time_range_s * buffer_pct  # Give a little leeway around the denoted view range.
+        # buffer_delta = timedelta(seconds=buffer_s)
+        # x_zero_time = timeview.min - buffer_delta
+        # x_width_time = timeview.max + buffer_delta
+
+        timeline_y = height / 2
+        pygame.draw.line(surface=surf, color=color.BLACK, start_pos=(0, timeline_y), end_pos=(width, timeline_y))
+
+        # Generate positions/rects for all timeline elements
+        visible_records = self.get_visible()
+
+        # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
+        LabelInfo = namedtuple("LabelInfo", "x_vals label_surf label_rect")
+        label_infos = []
+        font = pgm.get_font()
+        timeview_range = (self.min.toordinal(), self.max.toordinal())
+        screen_range = (buffer_px, width-buffer_px)
+        for rec in visible_records:
+            xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
+            xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
+            xes = 0 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
+            xee = width if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
+            antialias = False  # render takes no keyword arguments.
+            label_surf = font.render(rec.name, antialias, color.BLACK)
+            label_rect = pygame.rect.Rect((0, 0), label_surf.get_size())
+            label_rect.bottomleft = (xse, height/2-label_rect.height/2)  # Start by placing all labels just above the line.
+            label_infos.append(LabelInfo(x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
+
+        # Deconflict as needed to position each label.
+        deconflicted_rects = []
+        for li in label_infos:
+            lr = li.label_rect
+            count = 0
+            while lr.collidelist(deconflicted_rects) != -1 and count < 10:
+                count += 1
+                # Move lr up to try and avoid.
+                lr.bottomleft = (lr.x, lr.y-lr.height*1.5)
+            deconflicted_rects.append(lr)
+
+            # Render
+            # Two spokes to the timeline to demarcate the known time span (between start.max and end.min).
+            xss, xse, xes, xee = li.x_vals
+            pygame.draw.line(surface=surf,
+                             color=color.BLACK,
+                             start_pos=(xse, lr.y+lr.height*1.25),
+                             end_pos=(xse, timeline_y))
+            pygame.draw.line(surface=surf,
+                             color=color.BLACK,
+                             start_pos=(xes, lr.y+lr.height*1.25),
+                             end_pos=(xes, timeline_y))
+
+            # One line showing the full possible extent in time.
+            pygame.draw.line(surface=surf,
+                             color=color.BLACK,
+                             start_pos=(xss, lr.y+lr.height*1.25),
+                             end_pos=(xee, lr.y+lr.height*1.25))
+
+            # EventRecord's name.
+            surf.blit(li.label_surf, li.label_rect.topleft)
+
+            # Draw current resolution
+            font = pgm.get_font()
+            antialias = False  # render takes no keyword arguments.
+            dims_text = font.render(str((width, height)), antialias, color.BLACK)
+
+            surf.blit(dims_text, (10, 10))
