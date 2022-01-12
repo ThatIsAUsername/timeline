@@ -162,7 +162,7 @@ class Timeview:
             xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
             xes = 0 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
             xee = width if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
-            antialias = False  # render takes no keyword arguments.
+            antialias = True  # render takes no keyword arguments.
             label_surf = font.render(rec.name, antialias, color.BLACK)
             label_rect = pygame.rect.Rect((0, 0), label_surf.get_size())
             label_rect.bottomleft = (xse, height/2-label_rect.height/2)  # Start by placing all labels just above the line.
@@ -202,7 +202,7 @@ class Timeview:
 
             # Draw current resolution
             font = pgm.get_font()
-            antialias = False  # render takes no keyword arguments.
+            antialias = True  # render takes no keyword arguments.
             dims_text = font.render(str((width, height)), antialias, color.BLACK)
 
             surf.blit(dims_text, (10, 10))
