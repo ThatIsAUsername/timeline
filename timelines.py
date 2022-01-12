@@ -11,6 +11,7 @@ from algorithms import interpolate
 
 def run():
     pgm.initialize()
+    fps_clock = pygame.time.Clock()
 
     timeline = Timeline()
     timeline.load_from_file("data/rev_war.yaml")
@@ -43,6 +44,7 @@ def run():
         surf = pgm.get_screen()
         timeview.render(surf)
         pygame.display.update()
+        fps_clock.tick(60)
 
     pgm.terminate()
 

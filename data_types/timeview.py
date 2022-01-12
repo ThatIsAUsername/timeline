@@ -8,7 +8,7 @@ from pygame_manager import PyGameManager as pgm
 import color
 
 from datetime import date, timedelta
-from data_types import Timeline, TimeReference, EventRecord
+import data_types
 from algorithms import interpolate
 
 
@@ -18,17 +18,19 @@ class Timeview:
     # Values must be [0-1], where lower numbers cause more change.
     ZOOM_RATIO = 0.8
 
-    def __init__(self, timeline: Timeline):
+    def __init__(self, timeline: data_types.Timeline):
         self.timeline = timeline
         self.min: date = self.timeline.min
         self.max: date = self.timeline.max
+        self.render_min = data_types.SlidingValue(self.min.toordinal())
+        self.render_max = data_types.SlidingValue(self.max.toordinal())
 
-    def contains(self, timelike: Union[date, TimeReference, EventRecord]) -> bool:
+    def contains(self, timelike: Union[date, data_types.TimeReference, data_types.EventRecord]) -> bool:
         if type(timelike) is date:
             return self.contains_date(timelike)
-        elif type(timelike) is TimeReference:
+        elif type(timelike) is data_types.TimeReference:
             return self.contains_reference(timelike)
-        elif type(timelike) is EventRecord:
+        elif type(timelike) is data_types.EventRecord:
             return self.contains_record(timelike)
 
     def contains_date(self, d: date) -> bool:
@@ -42,7 +44,7 @@ class Timeview:
         """
         return self.min <= d <= self.max
 
-    def contains_reference(self, tr: TimeReference) -> bool:
+    def contains_reference(self, tr: data_types.TimeReference) -> bool:
         """
         Determine whether the given time reference is visible to the Timeview
         Args:
@@ -57,7 +59,7 @@ class Timeview:
 
         return True
 
-    def contains_record(self, rec: EventRecord) -> bool:
+    def contains_record(self, rec: data_types.EventRecord) -> bool:
         """
         Determine whether the provided EventRecord is visible to this Timeview.
         Args:
@@ -68,7 +70,7 @@ class Timeview:
         """
         return self.contains_reference(rec.start) or self.contains_reference(rec.end)
 
-    def get_visible(self) -> List[EventRecord]:
+    def get_visible(self) -> List[data_types.EventRecord]:
         """
         Returns:
             A list of all records from this view's Timeline that are also currently within the view.
@@ -99,6 +101,8 @@ class Timeview:
 
         self.min = self.min + lo_shift
         self.max = self.max - hi_shift
+        self.render_min.set(self.min.toordinal())
+        self.render_max.set(self.max.toordinal())
 
     def zoom_out(self, focus: date) -> None:
         """
@@ -121,15 +125,18 @@ class Timeview:
 
         self.min = self.min - hi_shift
         self.max = self.max + lo_shift
+        self.render_min.set(self.min.toordinal())
+        self.render_max.set(self.max.toordinal())
 
     def render(self, surf: pygame.Surface):
 
         # First draw the background
         surf.fill(color.WHITE)
 
+        min_ord = self.render_min.get()
+        max_ord = self.render_max.get()
+
         width, height = surf.get_size()
-        time_range: timedelta = self.max - self.min
-        time_range_s = time_range.total_seconds()
 
         buffer_pct = 0.02
         buffer_px = int(width*buffer_pct)
@@ -148,7 +155,7 @@ class Timeview:
         LabelInfo = namedtuple("LabelInfo", "x_vals label_surf label_rect")
         label_infos = []
         font = pgm.get_font()
-        timeview_range = (self.min.toordinal(), self.max.toordinal())
+        timeview_range = (min_ord, max_ord)
         screen_range = (buffer_px, width-buffer_px)
         for rec in visible_records:
             xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
