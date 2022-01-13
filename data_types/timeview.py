@@ -141,6 +141,7 @@ class Timeview:
 
         min_ord = self.render_min.get()
         max_ord = self.render_max.get()
+        timeview_range = (min_ord, max_ord)
 
         width, height = surf.get_size()
 
@@ -148,8 +149,21 @@ class Timeview:
         buffer_px = int(width*buffer_pct)
         # buffer_s = time_range_s * buffer_pct  # Give a little leeway around the denoted view range.
         # buffer_delta = timedelta(seconds=buffer_s)
-        # x_zero_time = timeview.min - buffer_delta
-        # x_width_time = timeview.max + buffer_delta
+        screen_range = (buffer_px, width-buffer_px)
+
+        font = pgm.get_font()
+
+        # Figure out where to draw guidelines. Then draw them.
+        guidelines = self.generate_guidelines(self.min, self.max)
+        for gl in guidelines:
+            glx = interpolate(gl.toordinal(), timeview_range, screen_range)
+            pygame.draw.line(surface=surf, color=color.LIGHT_GRAY, start_pos=(glx, 0), end_pos=(glx, height))
+            antialias = True
+            text = font.render(str(gl.year), antialias, color.LIGHT_GRAY)
+            text_size = text.get_size()
+            surf.blit(text, (glx+5, 5))
+            surf.blit(text, (glx+5, height - text_size[1] - 5))
+
 
         timeline_y = height / 2
         pygame.draw.line(surface=surf, color=color.BLACK, start_pos=(0, timeline_y), end_pos=(width, timeline_y))
@@ -160,9 +174,6 @@ class Timeview:
         # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
         LabelInfo = namedtuple("LabelInfo", "x_vals label_surf label_rect")
         label_infos = []
-        font = pgm.get_font()
-        timeview_range = (min_ord, max_ord)
-        screen_range = (buffer_px, width-buffer_px)
         for rec in visible_records:
             xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
             xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
@@ -212,3 +223,38 @@ class Timeview:
             dims_text = font.render(str((width, height)), antialias, color.BLACK)
 
             surf.blit(dims_text, (10, 10))
+
+    @staticmethod
+    def generate_guidelines(min_date: date, max_date: date) -> List[date]:
+        """
+        Figure out where to draw guidelines to help orient the viewer.
+
+        Args:
+            min_date: The beginning of the visible time range.
+            max_date: The end of the visible time range.
+
+        Returns:
+            A list of dates within the given range at which to draw orientation guidelines.
+        """
+
+        # Choose guidelines to show to always/usually show at least one, but not too many.
+        # 0<span<1 - show no guidelines
+        # 1<span<5 - show all years
+        # 5<span<10 - show even-numbered years
+        # 10<span<50 - show every 10
+        # 50<span<100 - show every 50
+        # <100 - every 100
+        span = max_date.year - min_date.year
+        mod = 1 if 0 < span <= 5 else \
+            2 if 5 < span <= 10 else \
+            10 if 10 < span <= 50 else \
+            50 if 50 < span <= 100 else \
+            100
+
+        # Use the mod to find the specific dates to draw
+        # Note that The max date's year should be visible; the min date's year may not.
+        chosen_dates = []
+        for year in range(min_date.year+1, max_date.year+1):
+            if year % mod == 0:
+                chosen_dates.append(date(year=year, month=1, day=1))
+        return chosen_dates
