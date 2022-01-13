@@ -123,8 +123,14 @@ class Timeview:
         lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
         hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
 
-        self.min = self.min - hi_shift
-        self.max = self.max + lo_shift
+        try:
+            self.min = self.min - hi_shift
+        except OverflowError as oe:
+            print("Warning! Attempting to view past the beginning of time!")
+        try:
+            self.max = self.max + lo_shift
+        except OverflowError as oe:
+            print("Warning! Attempting to view past the end of time!")
         self.render_min.set(self.min.toordinal())
         self.render_max.set(self.max.toordinal())
 
