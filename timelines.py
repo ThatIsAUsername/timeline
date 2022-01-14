@@ -3,7 +3,7 @@ import pygame
 from pygame_manager import PyGameManager as pgm
 from pygame.locals import *
 
-from datetime import date
+from datetime import date, timedelta
 
 from data_types import Timeline, Timeview
 from algorithms import interpolate
@@ -17,13 +17,15 @@ def run():
     timeline.load_from_file("data/rev_war.yaml")
     timeview = Timeview(timeline)
 
+    drag_anchor = None
+
     running = True
     while running:
 
         for event in pygame.event.get():
             if event.type == QUIT or (event.type == KEYUP and event.key == K_ESCAPE):
                 running = False
-            if event.type == MOUSEWHEEL:
+            elif event.type == MOUSEWHEEL:
 
                 mx, my = pygame.mouse.get_pos()
                 width, height = pgm.get_screen().get_size()
@@ -36,6 +38,25 @@ def run():
                     timeview.zoom_in(focus_date)
                 if wheel_backward:
                     timeview.zoom_out(focus_date)
+            elif event.type == MOUSEBUTTONDOWN:
+                mousex, mousey = event.pos
+                width, height = pgm.get_screen().get_size()
+                anchor_ordinal = interpolate(mousex, (0, width),
+                                             (timeview.min.toordinal(), timeview.max.toordinal()))
+                drag_anchor = date.fromordinal(int(anchor_ordinal))
+
+            elif event.type == MOUSEBUTTONUP:
+                drag_anchor = None
+            elif event.type == MOUSEMOTION:
+                if drag_anchor is not None:
+                    mousex, mousey = event.pos
+
+                    width, height = pgm.get_screen().get_size()
+                    x_ordinal = interpolate(mousex, (0, width),
+                                            (timeview.min.toordinal(), timeview.max.toordinal()))
+                    x_time = date.fromordinal(int(x_ordinal))
+                    timeview.pan(drag_anchor - x_time)
+
             # if event.type == MOUSEBUTTONUP:
             #     mousex, mousey = event.pos
             #     if play_rect.collidepoint(mousex, mousey):
