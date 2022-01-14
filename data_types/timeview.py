@@ -134,6 +134,29 @@ class Timeview:
         self.render_min.set(self.min.toordinal())
         self.render_max.set(self.max.toordinal())
 
+    def pan(self, delta: timedelta) -> None:
+        """
+        Shift the view by the prescribed delta.
+
+        Args:
+            delta: The amount to shift both the min and max bounds of the view.
+
+        Returns:
+            None
+        """
+        try:
+            self.min = self.min + delta
+        except OverflowError as oe:
+            print("Warning! Attempting to pan view past the beginning of time!")
+
+        try:
+            self.max = self.max + delta
+        except OverflowError as oe:
+            print("Warning! Attempting to pan view past the end of time!")
+
+        self.render_min.set(self.min.toordinal())
+        self.render_max.set(self.max.toordinal())
+
     def render(self, surf: pygame.Surface):
 
         # First draw the background

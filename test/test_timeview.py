@@ -1,8 +1,8 @@
-import math
-import unittest
-from datetime import date
 
-from data_types import Timeline, Timeview, TimeReference, EventRecord
+import unittest
+from datetime import date, timedelta
+
+from data_types import Timeline, Timeview
 
 
 class TestTimeview(unittest.TestCase):
@@ -200,3 +200,41 @@ class TestTimeview(unittest.TestCase):
         # Assert
         self.assertTrue(view.contains(min_date), "Early date should still be in view")
         self.assertTrue(view.contains(max_date), "Late date should still be in view")
+
+    def test_pan_right(self):
+
+        # Arrange
+        view = Timeview(self.timeline)
+        min_date = date(year=1970, month=8, day=17)
+        max_date = date(year=2040, month=6, day=5)
+
+        delta = timedelta(days=10)
+
+        min_ans = date(year=1970, month=8, day=27)
+        max_ans = date(year=2040, month=6, day=15)
+
+        # Act
+        view.pan(delta)
+
+        # Assert
+        self.assertEqual(view.min, min_ans)
+        self.assertEqual(view.max, max_ans)
+
+    def test_pan_left(self):
+
+        # Arrange
+        view = Timeview(self.timeline)
+        min_date = date(year=1970, month=8, day=17)
+        max_date = date(year=2040, month=6, day=5)
+
+        delta = timedelta(days=-4)
+
+        min_ans = date(year=1970, month=8, day=13)
+        max_ans = date(year=2040, month=6, day=1)
+
+        # Act
+        view.pan(delta)
+
+        # Assert
+        self.assertEqual(view.min, min_ans)
+        self.assertEqual(view.max, max_ans)
