@@ -209,8 +209,8 @@ class Timeview:
         for rec in visible_records:
             xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
             xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
-            xes = 0 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
-            xee = width if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
+            xes = 0-10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
+            xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
             antialias = True  # render takes no keyword arguments.
             label_surf = font.render(rec.name, antialias, color.BLACK)
             lw, lh = label_surf.get_size()
