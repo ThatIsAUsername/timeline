@@ -1,5 +1,6 @@
 
 import math
+from random import randrange
 from typing import List, Union
 from collections import namedtuple
 
@@ -24,6 +25,16 @@ class Timeview:
         self.max: date = self.timeline.max
         self.render_min = data_types.SlidingValue(self.min.toordinal())
         self.render_max = data_types.SlidingValue(self.max.toordinal())
+
+        # Generate colors for each of the records.
+        self.record_colors = {}
+        for rec_id in self.timeline.get_records().keys():
+            fg = pygame.Color(0)
+            bg = pygame.Color(0)
+            hue = randrange(0, 360)
+            fg.hsva = (hue, 30, 90)
+            bg.hsva = (hue, 50, 90, 0)
+            self.record_colors[rec_id] = (fg, bg)
 
     def contains(self, timelike: Union[date, data_types.TimeReference, data_types.EventRecord]) -> bool:
         if type(timelike) is date:
@@ -187,15 +198,13 @@ class Timeview:
             surf.blit(text, (glx+5, 5))
             surf.blit(text, (glx+5, height - text_size[1] - 5))
 
-
         timeline_y = height / 2
-        pygame.draw.line(surface=surf, color=color.BLACK, start_pos=(0, timeline_y), end_pos=(width, timeline_y))
 
         # Generate positions/rects for all timeline elements
         visible_records = self.get_visible()
 
         # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
-        LabelInfo = namedtuple("LabelInfo", "x_vals label_surf label_rect")
+        LabelInfo = namedtuple("LabelInfo", "id x_vals label_surf label_rect")
         label_infos = []
         for rec in visible_records:
             xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
@@ -204,9 +213,11 @@ class Timeview:
             xee = width if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
             antialias = True  # render takes no keyword arguments.
             label_surf = font.render(rec.name, antialias, color.BLACK)
-            label_rect = pygame.rect.Rect((0, 0), label_surf.get_size())
-            label_rect.bottomleft = (xse, height/2-label_rect.height/2)  # Start by placing all labels just above the line.
-            label_infos.append(LabelInfo(x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
+            lw, lh = label_surf.get_size()
+            label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
+            label_rect.midleft = (xse+2, height/2)  # Start by horizontally centering all labels.
+            label_rect.width = max(label_rect.width, label_surf.get_size()[0])
+            label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
 
         # Deconflict as needed to position each label.
         deconflicted_rects = []
@@ -216,29 +227,30 @@ class Timeview:
             while lr.collidelist(deconflicted_rects) != -1 and count < 10:
                 count += 1
                 # Move lr up to try and avoid.
-                lr.bottomleft = (lr.x, lr.y-lr.height*1.5)
+                lrx, lry = lr.topleft
+                lr.topleft = (lrx, lry-lr.height)
             deconflicted_rects.append(lr)
 
             # Render
-            # Two spokes to the timeline to demarcate the known time span (between start.max and end.min).
+            # Draw an outline showing the full possible extent in time (start.min to end.max)
+            fgc, bgc = self.record_colors[li.id]
             xss, xse, xes, xee = li.x_vals
-            pygame.draw.line(surface=surf,
-                             color=color.BLACK,
-                             start_pos=(xse, lr.y+lr.height*1.25),
-                             end_pos=(xse, timeline_y))
-            pygame.draw.line(surface=surf,
-                             color=color.BLACK,
-                             start_pos=(xes, lr.y+lr.height*1.25),
-                             end_pos=(xes, timeline_y))
+            pygame.draw.rect(surface=surf,
+                             color=fgc,
+                             rect=(xss, lr.top, xee-xss, lr.height),
+                             border_radius=int(lr.height/2),
+                             width=2
+                             )
 
-            # One line showing the full possible extent in time.
-            pygame.draw.line(surface=surf,
-                             color=color.BLACK,
-                             start_pos=(xss, lr.y+lr.height*1.25),
-                             end_pos=(xee, lr.y+lr.height*1.25))
+            # Draw a filled area showing the time during which the event was occurring (start.max to end.min).
+            pygame.draw.rect(surface=surf,
+                             color=bgc,
+                             rect=(xse, lr.top, xes-xse, lr.height),
+                             border_radius=int(lr.height/2),
+                             )
 
             # EventRecord's name.
-            surf.blit(li.label_surf, li.label_rect.topleft)
+            surf.blit(li.label_surf, (li.label_rect.x+2, li.label_rect.y+2))
 
             # Draw current resolution
             font = pgm.get_font()
