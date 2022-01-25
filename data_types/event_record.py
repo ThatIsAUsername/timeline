@@ -35,3 +35,6 @@ class EventRecord:
         before_data = record_data[bef_key] if bef_key in record_data else None
 
         return absolute, after_data, before_data
+
+    def __str__(self):
+        return self.name

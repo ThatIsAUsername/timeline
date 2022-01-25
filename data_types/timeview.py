@@ -79,7 +79,17 @@ class Timeview:
         Returns:
             True if the EventRecord would be at least partly visible within this Timeview, else False.
         """
-        return self.contains_reference(rec.start) or self.contains_reference(rec.end)
+
+        contains_rec = self.contains_reference(rec.start) or self.contains_reference(rec.end)
+        if contains_rec:
+            return contains_rec
+
+        # We may be zoomed inside the record such that the start and
+        # end are not in view, but we still want to draw the record.
+        if type(rec.start.min) is date and rec.start.min > self.max \
+                or type(rec.end.max) is date and rec.end.max < self.min:
+            return False
+        return True
 
     def get_visible(self) -> List[data_types.EventRecord]:
         """

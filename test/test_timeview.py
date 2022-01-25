@@ -2,7 +2,7 @@
 import unittest
 from datetime import date, timedelta
 
-from data_types import Timeline, Timeview
+from data_types import Timeline, Timeview, EventRecord
 
 
 class TestTimeview(unittest.TestCase):
@@ -78,6 +78,10 @@ class TestTimeview(unittest.TestCase):
             {'name': 'out half -infinity',
              'start_before': 'July 1970',
              },
+            {'name': 'wider than view',
+             'start': 'July 1950',
+             'end': 'Aug 2050',
+             },
             ]
         tl2 = Timeline()
         tl2.load_from_record_list(more_records)
@@ -101,18 +105,29 @@ class TestTimeview(unittest.TestCase):
     def test_contains_record(self):
 
         # Arrange
+        wide_dat = {'name': 'bef_aft', 'id': 'bef_aft', 'start': '10 Mar 1970', 'end': '11 Mar 2050'}
+        wide_rec = EventRecord(wide_dat)
 
-        # Act
         view = Timeview(self.timeline)
+        recs = list(self.timeline.get_records().values())
+        recs.append(wide_rec)
 
         # Assert
-        for rr in self.timeline.get_records().values():
-            self.assertTrue(view.contains(rr.start.min))
+        print('view range', view.min, view.max)
+        for rr in recs:
+            self.assertTrue(view.contains(rr), f"View contains {rr} ({rr.start.min}, {rr.end.max}) but claims not to.")
 
-        early_date = date(year=1970, month=8, day=16)
-        late_date = date(year=2040, month=6, day=6)
-        for dd in [early_date, late_date]:
-            self.assertFalse(view.contains(dd))
+    def test_not_contains_record(self):
+
+        # Arrange
+        view = Timeview(self.timeline)  # Create Timeview from 17 Aug 1970 to 5 Jun 2040.
+        rec_bef = {'name': 'before', 'id': 'before', 'start': '10 Mar 1970', 'end': '11 Mar 1970'}
+        rec_aft = {'name': 'after', 'id': 'after', 'start': '10 Mar 2050', 'end': '11 Mar 2050'}
+        recs = [EventRecord(rec_data) for rec_data in [rec_bef, rec_aft]]
+
+        # Assert
+        for rr in recs:
+            self.assertFalse(view.contains(rr), f"View does not contain {rr} ({rr.start.min}, {rr.end.max}) but claims to.")
 
     def test_zoom_in_min(self):
         # Zooming in on a point should not expand the view, and should not reduce
