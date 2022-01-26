@@ -217,9 +217,9 @@ class Timeview:
         LabelInfo = namedtuple("LabelInfo", "id x_vals label_surf label_rect")
         label_infos = []
         for rec in visible_records:
-            xss = 0 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
+            xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
             xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
-            xes = 0-10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
+            xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
             xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
             antialias = True  # render takes no keyword arguments.
             label_surf = font.render(rec.name, antialias, color.BLACK)
@@ -262,7 +262,10 @@ class Timeview:
                                  )
 
             # EventRecord's name.
-            label_x = xse+4 if xse <= xes else xss+4
+            label_buffer = 5
+            label_x = xse if xse <= xes else xss
+            # Ensure the label is drawn on-screen.
+            label_x = label_buffer + label_x if label_x > 0 else label_buffer
             surf.blit(li.label_surf, (label_x, li.label_rect.y+2))
 
             # Draw current resolution
