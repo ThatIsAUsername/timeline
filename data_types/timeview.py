@@ -225,7 +225,7 @@ class Timeview:
             label_surf = font.render(rec.name, antialias, color.BLACK)
             lw, lh = label_surf.get_size()
             label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
-            label_rect.midleft = (xse+2, height/2)  # Start by horizontally centering all labels.
+            label_rect.midleft = (xss, height/2)  # Start by horizontally centering all labels.
             label_rect.width = max(label_rect.width, label_surf.get_size()[0])
             label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
 
@@ -253,14 +253,17 @@ class Timeview:
                              )
 
             # Draw a filled area showing the time during which the event was occurring (start.max to end.min).
-            pygame.draw.rect(surface=surf,
-                             color=bgc,
-                             rect=(xse, lr.top, xes-xse, lr.height),
-                             border_radius=int(lr.height/2),
-                             )
+            if xse <= xes:
+                pygame.draw.rect(surface=surf,
+                                 color=bgc,
+                                 rect=(xse, lr.top, xes-xse, lr.height),
+                                 border_radius=int(lr.height/2),
+                                 # width=1
+                                 )
 
             # EventRecord's name.
-            surf.blit(li.label_surf, (li.label_rect.x+2, li.label_rect.y+2))
+            label_x = xse+4 if xse <= xes else xss+4
+            surf.blit(li.label_surf, (label_x, li.label_rect.y+2))
 
             # Draw current resolution
             font = pgm.get_font()
