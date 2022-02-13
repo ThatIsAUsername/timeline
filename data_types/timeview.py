@@ -12,6 +12,9 @@ from datetime import date, timedelta
 import data_types
 from algorithms import interpolate
 
+# Utility struct to hold info about the event records we are drawing.
+LabelInfo = namedtuple("LabelInfo", "id x_vals label_surf label_rect")
+
 
 class Timeview:
 
@@ -23,8 +26,16 @@ class Timeview:
         self.timeline = timeline
         self.min: date = self.timeline.min
         self.max: date = self.timeline.max
-        self.render_min = data_types.SlidingValue(self.min.toordinal())
-        self.render_max = data_types.SlidingValue(self.max.toordinal())
+
+        # The view is redrawn based on whether it has changed. So. Make sure it changes to begin.
+        self.render_min = data_types.SlidingValue(self.max.toordinal())
+        self.render_max = data_types.SlidingValue(self.min.toordinal())
+        self.render_min.set(self.min.toordinal())
+        self.render_max.set(self.max.toordinal())
+
+        # Store the drawable information to avoid recalculating every frame.
+        self.guidelines = []
+        self.label_infos: List[LabelInfo] = []
 
         # Generate colors for each of the records.
         self.record_colors = {}
@@ -180,6 +191,8 @@ class Timeview:
 
     def render(self, surf: pygame.Surface):
 
+        regen_view = not self.render_min.is_at_destination() or not self.render_max.is_at_destination()
+
         # First draw the background
         surf.fill(color.WHITE)
 
@@ -198,8 +211,9 @@ class Timeview:
         font = pgm.get_font()
 
         # Figure out where to draw guidelines. Then draw them.
-        guidelines = self.generate_guidelines(self.min, self.max)
-        for gl in guidelines:
+        if regen_view:
+            self.guidelines = self.generate_guidelines(self.min, self.max)
+        for gl in self.guidelines:
             glx = interpolate(gl.toordinal(), timeview_range, screen_range)
             pygame.draw.line(surface=surf, color=color.LIGHT_GRAY, start_pos=(glx, 0), end_pos=(glx, height))
             antialias = True
@@ -210,47 +224,50 @@ class Timeview:
 
         timeline_y = height / 2
 
-        # Generate positions/rects for all timeline elements
-        visible_records = self.get_visible()
+        # Regenerate the drawable time events if the view changed.
+        if regen_view:
+            # Generate positions/rects for all timeline elements
+            visible_records = self.get_visible()
 
-        # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
-        LabelInfo = namedtuple("LabelInfo", "id x_vals label_surf label_rect")
-        label_infos = []
-        for rec in visible_records:
-            xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
-            xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
-            xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
-            xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
-            antialias = True  # render takes no keyword arguments.
-            label_surf = font.render(rec.name, antialias, color.BLACK)
-            lw, lh = label_surf.get_size()
-            label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
-            label_rect.midleft = (xss, height/2)  # Start by horizontally centering all labels.
-            label_rect.width = max(label_rect.width, label_surf.get_size()[0])
-            label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
+            # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
+            self.label_infos = []
+            for rec in visible_records:
+                xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
+                xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
+                xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
+                xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
+                antialias = True  # render takes no keyword arguments.
+                label_surf = font.render(rec.name, antialias, color.BLACK)
+                lw, lh = label_surf.get_size()
+                label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
+                label_rect.midleft = (xss, height/2)  # Start by horizontally centering all labels.
+                label_rect.width = max(label_rect.width, label_surf.get_size()[0])
+                self.label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
 
-        # Deconflict as needed to position each label.
-        deconflicted_rects = []
-        deconflict_up = False
-        for li in label_infos:
-            deconflict_up = not deconflict_up
-            lr = li.label_rect
-            count = 0
-            idx = lr.collidelist(deconflicted_rects)
-            while idx != -1 and count < 10:
-                count += 1
-
-                # Find the rect we are hitting and move past it.
-                other: pygame.Rect = deconflicted_rects[idx]
-                if deconflict_up:
-                    lr.bottom = other.top
-                else:
-                    lr.top = other.bottom
+            # Deconflict as needed to position each label.
+            deconflicted_rects = []
+            deconflict_up = False
+            for li in self.label_infos:
+                deconflict_up = not deconflict_up
+                lr = li.label_rect
+                count = 0
                 idx = lr.collidelist(deconflicted_rects)
-            deconflicted_rects.append(lr)
+                while idx != -1 and count < 10:
+                    count += 1
 
+                    # Find the rect we are hitting and move past it.
+                    other: pygame.Rect = deconflicted_rects[idx]
+                    if deconflict_up:
+                        lr.bottom = other.top
+                    else:
+                        lr.top = other.bottom
+                    idx = lr.collidelist(deconflicted_rects)
+                deconflicted_rects.append(lr)
+
+        for li in self.label_infos:
             # Render
             # Draw an outline showing the full possible extent in time (start.min to end.max)
+            lr = li.label_rect
             fgc, bgc = self.record_colors[li.id]
             xss, xse, xes, xee = li.x_vals
             pygame.draw.rect(surface=surf,

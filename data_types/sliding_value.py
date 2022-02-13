@@ -44,3 +44,9 @@ class SlidingValue:
         if also_update:
             self.update()
         return self.pos
+
+    def is_at_destination(self):
+        """
+        Returns: True if the value is at its target, False if it is still sliding.
+        """
+        return self.pos == self.tgt
