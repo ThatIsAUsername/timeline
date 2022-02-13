@@ -231,7 +231,9 @@ class Timeview:
 
         # Deconflict as needed to position each label.
         deconflicted_rects = []
+        deconflict_up = False
         for li in label_infos:
+            deconflict_up = not deconflict_up
             lr = li.label_rect
             count = 0
             idx = lr.collidelist(deconflicted_rects)
@@ -240,7 +242,10 @@ class Timeview:
 
                 # Find the rect we are hitting and move past it.
                 other: pygame.Rect = deconflicted_rects[idx]
-                lr.bottom = other.top
+                if deconflict_up:
+                    lr.bottom = other.top
+                else:
+                    lr.top = other.bottom
                 idx = lr.collidelist(deconflicted_rects)
             deconflicted_rects.append(lr)
 
