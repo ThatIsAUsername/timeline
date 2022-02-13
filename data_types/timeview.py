@@ -276,13 +276,6 @@ class Timeview:
             label_x = label_buffer + label_x if label_x > 0 else label_buffer
             surf.blit(li.label_surf, (label_x, li.label_rect.y+2))
 
-            # Draw current resolution
-            font = pgm.get_font()
-            antialias = True  # render takes no keyword arguments.
-            dims_text = font.render(str((width, height)), antialias, color.BLACK)
-
-            surf.blit(dims_text, (10, 10))
-
     @staticmethod
     def generate_guidelines(min_date: date, max_date: date) -> List[date]:
         """
