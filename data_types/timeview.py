@@ -234,11 +234,14 @@ class Timeview:
         for li in label_infos:
             lr = li.label_rect
             count = 0
-            while lr.collidelist(deconflicted_rects) != -1 and count < 10:
+            idx = lr.collidelist(deconflicted_rects)
+            while idx != -1 and count < 10:
                 count += 1
-                # Move lr up to try and avoid.
-                lrx, lry = lr.topleft
-                lr.topleft = (lrx, lry-lr.height)
+
+                # Find the rect we are hitting and move past it.
+                other: pygame.Rect = deconflicted_rects[idx]
+                lr.bottom = other.top
+                idx = lr.collidelist(deconflicted_rects)
             deconflicted_rects.append(lr)
 
             # Render
