@@ -7,4 +7,5 @@ from .event_record import EventRecord
 from .exceptions import InconsistentTimeReferenceError, UnknownEventRecordError, IncoherentTimelineError
 from .timeline import Timeline
 from .timeview import Timeview
+from .time_point import TimePoint
 from .sliding_value import SlidingValue
