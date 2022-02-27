@@ -6,11 +6,20 @@ UNUSED_STRUCT_FIELDS = (0, 0, 0, 0, 0, -1)  # hour, min, sec, wday, yday, isdst
 
 
 class TimePoint:
+
     def __init__(self, year: int = 0, month: int = 0, day: int = 0):
         self._time: struct_time = struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
+        self.DAY_ZERO = None  # Initialized at the bottom of this file.
 
-    def ordinal(self):
-        pass
+    def ordinal(self) -> int:
+        """
+        Represent this point in time as an integer for direct comparisons.
+        the calendar module sets 1 BC as year zero, so we will follow their lead and say that
+        Dec 31 of year 0 is day zero (so Jan 1 of 1 AD is day 1).
+        Returns: The number of days from Dec 31 of 1 BC.
+        """
+        delta: timedelta = self - TimePoint.DAY_ZERO
+        return delta.days
 
     # ------------------------------------------------------------
     # Properties
@@ -105,6 +114,10 @@ class TimePoint:
         weekday, month_len = calendar.monthrange(older.year, older.month)
         total_days += month_len - older.day
         track_month += 1
+        # If track_month is too high, roll the year.
+        if track_month == 13:
+            track_month = 1
+            track_year += 1
 
         # Count days of all months in between.
         while track_year < newer.year or track_month < newer.month:
@@ -142,3 +155,7 @@ class TimePoint:
 
     def __ge__(self, other: 'TimePoint'):
         return self._time >= other._time
+
+
+# Declare a known constant as a baseline.
+TimePoint.DAY_ZERO = TimePoint(year=0, month=12, day=31)

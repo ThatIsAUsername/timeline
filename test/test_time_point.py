@@ -90,3 +90,20 @@ class TestTimePoint(unittest.TestCase):
         # Assert
         self.assertEqual(tp1, ans1)
         self.assertEqual(tp2, ans2)
+
+    def test_ordinal(self):
+        # Arrange
+        y1, m1, d1 = 1, 1, 1
+        tp = TimePoint(year=y1, month=m1, day=d1)
+        ans1 = 1
+        y2, m2, d2 = 0, 12, 31  # calendar treats year zero as 1 BC.
+        tp2 = TimePoint(year=y2, month=m2, day=d2)
+        ans2 = 0
+
+        # Act
+        ord1 = tp.ordinal()
+        ord2 = tp2.ordinal()
+
+        # Assert
+        self.assertEqual(ord1, ans1)
+        self.assertEqual(ord2, ans2)
