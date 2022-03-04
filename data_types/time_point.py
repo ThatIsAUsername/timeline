@@ -11,6 +11,12 @@ class TimePoint:
         self._time: struct_time = struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
         self.DAY_ZERO = None  # Initialized at the bottom of this file.
 
+    @staticmethod
+    def from_ordinal(ordinal: int) -> 'TimePoint':
+        td = timedelta(days=ordinal)
+        tp = TimePoint.DAY_ZERO + td
+        return tp
+
     def ordinal(self) -> int:
         """
         Represent this point in time as an integer for direct comparisons.
