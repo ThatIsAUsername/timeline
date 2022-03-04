@@ -1,8 +1,10 @@
 
 import unittest
 
-from datetime import date
-from data_types import TimeReference, months
+from data_types import TimeReference, TimePoint
+from calendar import month_abbr
+
+months = list(month_abbr)
 
 
 class TestTimeReference(unittest.TestCase):
@@ -12,8 +14,8 @@ class TestTimeReference(unittest.TestCase):
         # Arrange
         date_str = "01 Jan 2021"
 
-        date_ans = date(day=1, month=months.index('jan'), year=2021)
-        date_ans_ord = date_ans.toordinal()
+        date_ans = TimePoint(day=1, month=months.index('jan'), year=2021)
+        date_ans_ord = date_ans.ordinal()
 
         # Act
         tr = TimeReference(absolute=date_str)
@@ -21,8 +23,8 @@ class TestTimeReference(unittest.TestCase):
         # Assert
         # Since we initialized the TimeReference with an absolute time,
         # the min and max possible reference values should be the same.
-        self.assertEqual(date_ans_ord, tr.min.toordinal())
-        self.assertEqual(date_ans_ord, tr.max.toordinal())
+        self.assertEqual(date_ans_ord, tr.min.ordinal())
+        self.assertEqual(date_ans_ord, tr.max.ordinal())
 
     def test_absolute_no_day(self):
 
@@ -30,17 +32,17 @@ class TestTimeReference(unittest.TestCase):
         date_str = "Jan 2021"
 
         # The provided date includes no day, so it should assume a min and max of the month's bounds.
-        ans_beg = date(day=1, month=months.index('jan'), year=2021)
-        ans_beg_ord = ans_beg.toordinal()
-        ans_end = date(day=31, month=months.index('jan'), year=2021)
-        ans_end_ord = ans_end.toordinal()
+        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg_ord = ans_beg.ordinal()
+        ans_end = TimePoint(day=31, month=months.index('jan'), year=2021)
+        ans_end_ord = ans_end.ordinal()
 
         # Act
         tr = TimeReference(absolute=date_str)
 
         # Assert
-        self.assertEqual(ans_beg_ord, tr.min.toordinal())
-        self.assertEqual(ans_end_ord, tr.max.toordinal())
+        self.assertEqual(ans_beg_ord, tr.min.ordinal())
+        self.assertEqual(ans_end_ord, tr.max.ordinal())
 
     def test_absolute_no_month(self):
 
@@ -48,17 +50,17 @@ class TestTimeReference(unittest.TestCase):
         date_str = "2021"
 
         # The provided date includes no day, so it should assume a min and max of the month's bounds.
-        ans_beg = date(day=1, month=months.index('jan'), year=2021)
-        ans_beg_ord = ans_beg.toordinal()
-        ans_end = date(day=31, month=months.index('dec'), year=2021)
-        ans_end_ord = ans_end.toordinal()
+        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg_ord = ans_beg.ordinal()
+        ans_end = TimePoint(day=31, month=months.index('dec'), year=2021)
+        ans_end_ord = ans_end.ordinal()
 
         # Act
         tr = TimeReference(absolute=date_str)
 
         # Assert
-        self.assertEqual(ans_beg_ord, tr.min.toordinal())
-        self.assertEqual(ans_end_ord, tr.max.toordinal())
+        self.assertEqual(ans_beg_ord, tr.min.ordinal())
+        self.assertEqual(ans_end_ord, tr.max.ordinal())
 
     def test_absolute_reference(self):
 
@@ -101,10 +103,10 @@ class TestTimeReference(unittest.TestCase):
         later_str = "05 Mar 2022"  # This one must be after
 
         # This time reference should thus begin at after_str and end at before_str.
-        ans_beg = date(day=1, month=months.index('jan'), year=2021)
-        ans_beg_ord = ans_beg.toordinal()
-        ans_end = date(day=5, month=months.index('mar'), year=2022)
-        ans_end_ord = ans_end.toordinal()
+        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg_ord = ans_beg.ordinal()
+        ans_end = TimePoint(day=5, month=months.index('mar'), year=2022)
+        ans_end_ord = ans_end.ordinal()
 
         # Act
         tr = TimeReference(older=older_str, later=later_str)
@@ -115,8 +117,8 @@ class TestTimeReference(unittest.TestCase):
         self.assertEqual(type(tr._later_refs), list)
         self.assertEqual(len(tr._older_refs), 1)
         self.assertEqual(len(tr._later_refs), 1)
-        self.assertEqual(ans_beg_ord, tr._older_refs[0].toordinal())
-        self.assertEqual(ans_end_ord, tr._later_refs[0].toordinal())
+        self.assertEqual(ans_beg_ord, tr._older_refs[0].ordinal())
+        self.assertEqual(ans_end_ord, tr._later_refs[0].ordinal())
 
     def test_relative_lists_refs(self):
 

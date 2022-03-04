@@ -1,7 +1,8 @@
 from typing import List, Tuple, Union
-from datetime import date
-from calendar import monthrange
-from data_types import months
+from calendar import monthrange, month_abbr
+from data_types import TimePoint
+
+months = list(month_abbr)
 
 
 class TimeReference:
@@ -73,7 +74,7 @@ class TimeReference:
                         self._later_refs.append(l8r_min if l8r_min is not None else tr)
 
     @staticmethod
-    def _parse_input(tokens: List[str]) -> Tuple[date, date]:
+    def _parse_input(tokens: List[str]) -> Tuple[TimePoint, TimePoint]:
 
         # if three tokens, expect day month year
         # if two tokens, expect month year; day is min of 1 and max of monthrange(year, month).
@@ -81,13 +82,13 @@ class TimeReference:
         if len(tokens) == 3:  # Expect DD MMM YYYY (e.g. 21 Jan 2018)
             day_min, month_min, year_min = tokens
             day_min = int(day_min)
-            month_min = months.index(month_min[:3].lower())
+            month_min = months.index(month_min[:3].title())
             year_min = int(year_min)
             day_max, month_max, year_max = day_min, month_min, year_min
         elif len(tokens) == 2:  # Expect MMM YYYY
             month_min, year_min = tokens
             year_min = int(year_min)
-            month_min = months.index(month_min[:3].lower())
+            month_min = months.index(month_min[:3].title())
             year_max, month_max = year_min, month_min
             day_min = 1
             # monthrange returns a tuple of the weekday the month started, and the length of the month.
@@ -107,6 +108,6 @@ class TimeReference:
         elif len(tokens) == 0:
             return None, None
 
-        date_min = date(year=year_min, month=month_min, day=day_min)
-        date_max = date(year=year_max, month=month_max, day=day_max)
+        date_min = TimePoint(year=year_min, month=month_min, day=day_min)
+        date_max = TimePoint(year=year_max, month=month_max, day=day_max)
         return date_min, date_max

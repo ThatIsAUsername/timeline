@@ -3,9 +3,7 @@ import pygame
 from pygame_manager import PyGameManager as pgm
 from pygame.locals import *
 
-from datetime import date, timedelta
-
-from data_types import Timeline, Timeview
+from data_types import Timeline, Timeview, TimePoint
 from algorithms import interpolate
 
 
@@ -29,9 +27,9 @@ def run():
 
                 mx, my = pygame.mouse.get_pos()
                 width, height = pgm.get_screen().get_size()
-                focus_date_ordinal = interpolate(mx, (0, width), (timeview.min.toordinal(), timeview.max.toordinal()))
+                focus_date_ordinal = interpolate(mx, (0, width), (timeview.min.ordinal(), timeview.max.ordinal()))
                 focus_date_ordinal = round(focus_date_ordinal)
-                focus_date = date.fromordinal(focus_date_ordinal)
+                focus_date = TimePoint.from_ordinal(focus_date_ordinal)
                 wheel_forward = event.y > 0
                 wheel_backward = event.y < 0
                 if wheel_forward:
@@ -42,8 +40,8 @@ def run():
                 mousex, mousey = event.pos
                 width, height = pgm.get_screen().get_size()
                 anchor_ordinal = interpolate(mousex, (0, width),
-                                             (timeview.min.toordinal(), timeview.max.toordinal()))
-                drag_anchor = date.fromordinal(int(anchor_ordinal))
+                                             (timeview.min.ordinal(), timeview.max.ordinal()))
+                drag_anchor = TimePoint.from_ordinal(int(anchor_ordinal))
 
             elif event.type == MOUSEBUTTONUP:
                 drag_anchor = None
@@ -53,8 +51,8 @@ def run():
 
                     width, height = pgm.get_screen().get_size()
                     x_ordinal = interpolate(mousex, (0, width),
-                                            (timeview.min.toordinal(), timeview.max.toordinal()))
-                    x_time = date.fromordinal(int(x_ordinal))
+                                            (timeview.min.ordinal(), timeview.max.ordinal()))
+                    x_time = TimePoint.from_ordinal(int(x_ordinal))
                     timeview.pan(drag_anchor - x_time)
 
             # if event.type == MOUSEBUTTONUP:

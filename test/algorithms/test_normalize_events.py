@@ -1,12 +1,14 @@
 
 from typing import Dict
 import unittest
-from datetime import date
 import math
 import yaml
 
 from algorithms import normalize_events, parse_record_list
-from data_types import months, EventRecord, InconsistentTimeReferenceError, UnknownEventRecordError
+from data_types import EventRecord, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError
+from calendar import month_abbr
+
+months = list(month_abbr)
 
 
 class TestNormalizeEvents(unittest.TestCase):
@@ -18,8 +20,8 @@ class TestNormalizeEvents(unittest.TestCase):
                        {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
                        {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
                        ]
-        birth_date = date(day=17, month=months.index('aug'), year=1970)
-        death_date = date(day=5, month=months.index('jun'), year=2040)
+        birth_date = TimePoint(day=17, month=months.index('Aug'), year=1970)
+        death_date = TimePoint(day=5, month=months.index('Aun'), year=2040)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
@@ -43,8 +45,8 @@ class TestNormalizeEvents(unittest.TestCase):
                        {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
                        {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
                        ]
-        birth_date = date(day=17, month=months.index('aug'), year=1970)
-        death_date = date(day=5, month=months.index('jun'), year=2040)
+        birth_date = TimePoint(day=17, month=months.index('aug'), year=1970)
+        death_date = TimePoint(day=5, month=months.index('jun'), year=2040)
         start_ans = -math.inf
         end_ans = math.inf
 
@@ -91,7 +93,7 @@ class TestNormalizeEvents(unittest.TestCase):
         rec_id = 'eternity_past'
         record_list = [{'name': 'Eternity past', 'id': rec_id, 'end': '5 Jun 2040'}]
         rec_beg = -math.inf
-        rec_end = date(day=5, month=months.index('jun'), year=2040)
+        rec_end = TimePoint(day=5, month=months.index('jun'), year=2040)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
@@ -129,9 +131,9 @@ class TestNormalizeEvents(unittest.TestCase):
         rec_id = 'overlap'
         record_list = [{'name': 'Overlap', 'id': rec_id, 'start_before': '6 Jun 2040', 'end_before': '7 Jun 2040'}]
         start_min_ans = -math.inf
-        start_max_ans = date(year=2040, month=6, day=6)
+        start_max_ans = TimePoint(year=2040, month=6, day=6)
         end_min_ans = -math.inf  # Event cannot end before starting... but it could start anytime in the past
-        end_max_ans = date(year=2040, month=6, day=7)
+        end_max_ans = TimePoint(year=2040, month=6, day=7)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
@@ -149,10 +151,10 @@ class TestNormalizeEvents(unittest.TestCase):
         # Arrange
         rec_id = 'bounded'
         record_list = [{'name': 'Bounded', 'id': rec_id, 'start': '6 Jun 2040', 'end_before': '7 Jun 2040'}]
-        start_min_ans = date(year=2040, month=6, day=6)
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
         start_max_ans = start_min_ans  # fixed-point time reference
         end_min_ans = start_min_ans  # Can't end before start.min
-        end_max_ans = date(year=2040, month=6, day=7)
+        end_max_ans = TimePoint(year=2040, month=6, day=7)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
@@ -170,8 +172,8 @@ class TestNormalizeEvents(unittest.TestCase):
         # Arrange
         rec_id = 'bounded'
         record_list = [{'name': 'Bounded', 'id': rec_id, 'start_after': '6 Jun 2040', 'end': '7 Jun 2040'}]
-        start_min_ans = date(year=2040, month=6, day=6)
-        end_ans = date(year=2040, month=6, day=7)
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
+        end_ans = TimePoint(year=2040, month=6, day=7)
         start_max_ans = end_ans  # Can't start after it ends
 
         # Act

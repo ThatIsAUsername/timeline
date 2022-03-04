@@ -1,8 +1,8 @@
 
 import unittest
-from datetime import date, timedelta
+from datetime import timedelta
 
-from data_types import Timeline, Timeview, EventRecord
+from data_types import Timeline, TimePoint, Timeview, EventRecord
 
 
 class TestTimeview(unittest.TestCase):
@@ -38,8 +38,8 @@ class TestTimeview(unittest.TestCase):
         for rr in self.timeline.get_records().values():
             self.assertTrue(view.contains(rr.start.min))
 
-        early_date = date(year=1970, month=8, day=16)
-        late_date = date(year=2040, month=6, day=6)
+        early_date = TimePoint(year=1970, month=8, day=16)
+        late_date = TimePoint(year=2040, month=6, day=6)
         for dd in [early_date, late_date]:
             self.assertFalse(view.contains(dd))
 

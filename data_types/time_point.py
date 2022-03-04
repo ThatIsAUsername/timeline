@@ -1,3 +1,4 @@
+from typing import Union
 from time import struct_time
 from datetime import timedelta
 import calendar
@@ -96,15 +97,24 @@ class TimePoint:
 
         return TimePoint(year=year, month=month, day=day)
 
-    def __sub__(self, other: 'TimePoint') -> timedelta:
+    def __sub__(self, other: Union['TimePoint', timedelta]) -> Union['TimePoint', timedelta]:
         """
-        Calculate the timedelta between this date and the other one. Can be negative.
+        If other is a TimePoint:
+            Calculate the timedelta between this date and the other one. Can be negative.
+        If other is a timedelta:
+            Calculate a new TimePoint gained from subtracting the timedelta from this TimePoint.
 
         Args:
-            other: A TimePoint to difference against.
+            other: A TimePoint to differ against or a timedelta to subtract.
 
-        Returns: A timedelta with the number of days between the two TimePoints.
+        Returns:
+            A timedelta with the number of days between the two TimePoints (if other is a TimePoint) or
+            the TimePoint calculated by subtracting the timedelta from self.
         """
+        # If we are subtracting a timedelta instead of a TimePoint, just invert and pass it to __add__
+        if isinstance(other, timedelta):
+            return self + timedelta(days=-other.days)
+
         # If both dates are in the same month, treat this as a special case.
         if self.year == other.year and self.month == other.month:
             return timedelta(days=self.day - other.day)
@@ -148,19 +158,29 @@ class TimePoint:
         return timedelta(days=total_days)
 
     def __gt__(self, other: 'TimePoint'):
-        return self._time > other._time
+        if isinstance(other, TimePoint):
+            return self._time > other._time
+        return NotImplemented
 
     def __lt__(self, other: 'TimePoint'):
-        return self._time < other._time
+        if isinstance(other, TimePoint):
+            return self._time < other._time
+        return NotImplemented
 
     def __eq__(self, other: 'TimePoint'):
-        return self._time == other._time
+        if isinstance(other, TimePoint):
+            return self._time == other._time
+        return NotImplemented
 
     def __le__(self, other: 'TimePoint'):
-        return self._time <= other._time
+        if isinstance(other, TimePoint):
+            return self._time <= other._time
+        return NotImplemented
 
     def __ge__(self, other: 'TimePoint'):
-        return self._time >= other._time
+        if isinstance(other, TimePoint):
+            return self._time >= other._time
+        return NotImplemented
 
 
 # Declare a known constant as a baseline.

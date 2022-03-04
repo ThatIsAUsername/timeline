@@ -1,9 +1,9 @@
 from typing import Dict, List
 import yaml
 import math
-from datetime import date
 
-from data_types import EventRecord, IncoherentTimelineError
+from datetime import date
+from data_types import EventRecord, TimePoint, IncoherentTimelineError
 import algorithms
 
 
@@ -35,7 +35,7 @@ class Timeline:
             bounds = [rec.start.min, rec.start.max, rec.end.min, rec.end.max]
 
             # We only want to track real dates - so ignore non-dates (infinities) in the normalized records.
-            bounds = [b for b in bounds if type(b) is date]
+            bounds = [b for b in bounds if type(b) is TimePoint]
 
             for bound in bounds:
                 if self.min == -math.inf or bound < self.min:
@@ -43,7 +43,7 @@ class Timeline:
                 if self.max == math.inf or bound > self.max:
                     self.max = bound
 
-        if type(self.min) is not date:  # min and max be the same, but if one is real the other should be also.
+        if type(self.min) is not TimePoint:  # min and max be the same, but if one is real the other should be also.
             raise IncoherentTimelineError("[timeline.load] Failed to find any well-defined dates")
 
     def get_records(self) -> Dict[str, EventRecord]:

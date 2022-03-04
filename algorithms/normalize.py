@@ -2,9 +2,8 @@
 import math
 from typing import Dict, List
 from collections import deque
-from datetime import date
 
-from data_types import EventRecord, TimeReference, InconsistentTimeReferenceError, UnknownEventRecordError
+from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError
 
 
 def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> Dict[str, EventRecord]:
@@ -95,22 +94,22 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
 
         # Make sure the start can't be later than the end.
         if type(cur.start.max) is float or\
-                (type(cur.start.max) is date and type(cur.end.max) is date and cur.start.max > cur.end.max):
+                (type(cur.start.max) is TimePoint and type(cur.end.max) is TimePoint and cur.start.max > cur.end.max):
             cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
             if verbose:
                 print(f"[normalize_event] Setting `{cid}` start.max to respect `{cid}` end.max ({cur.start.max}).")
 
-        if type(cur.start.min) is date and type(cur.start.max) is date and cur.start.min > cur.start.max:
+        if type(cur.start.min) is TimePoint and type(cur.start.max) is TimePoint and cur.start.min > cur.start.max:
             raise InconsistentTimeReferenceError(f"start.min of `{cid}` ({cur.start.min}) is after start.max ({cur.start.max}).")
 
         # Make sure the end can't be earlier than the start.
         if type(cur.end.min) is float or \
-                (type(cur.end.min) is date and type(cur.start.min) is date and cur.end.min < cur.start.min):
+                (type(cur.end.min) is TimePoint and type(cur.start.min) is TimePoint and cur.end.min < cur.start.min):
             cur.end.min = cur.start.min  # End can't be before the earliest possible start time (could still be -inf).
             if verbose:
                 print(f"[normalize_event] Setting `{cid}` end.min to respect `{cid}` start.min ({cur.end.min}).")
 
-        if type(cur.end.min) is date and type(cur.end.max) is date and cur.end.min > cur.end.max:
+        if type(cur.end.min) is TimePoint and type(cur.end.max) is TimePoint and cur.end.min > cur.end.max:
             raise InconsistentTimeReferenceError(f"end.min of `{cid}` ({cur.end.min}) is after end.max ({cur.end.max}).")
 
         # This record is now done; we don't have to redo it on a future pass.
@@ -147,7 +146,7 @@ def bind_reference_boundary(cid: str,
 
     rec = records[cid]
     cref: TimeReference = rec.start if bind_start else rec.end
-    boundary: date = cref.min if bind_min else cref.max
+    boundary: TimePoint = cref.min if bind_min else cref.max
     if boundary is not None:
         return True  # This boundary is already known; no work required.
 
@@ -168,7 +167,7 @@ def bind_reference_boundary(cid: str,
     constraints = cref._older_refs if bind_min else cref._later_refs
     resolved_constraints = []
     for constraint in constraints:
-        if type(constraint) is date:
+        if type(constraint) is TimePoint:
             resolved_constraints.append(constraint)
         elif type(constraint) is str:
             fix_end = constraint[-1] == '$'
@@ -221,7 +220,7 @@ def bind_reference_boundary(cid: str,
     else:
         # Constraints can be a date or +/-inf if the constraining ref was itself unconstrained.
         # Ignore non-dates if any dates exist.
-        real_dates = [real for real in resolved_constraints if type(real) is date]
+        real_dates = [real for real in resolved_constraints if type(real) is TimePoint]
         if len(real_dates) == 0:
             bind_value = resolved_constraints[0]  # Only possibility here should be +/-math.inf.
             if verbose:

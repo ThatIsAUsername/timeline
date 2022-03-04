@@ -1,8 +1,7 @@
 
 import unittest
-from datetime import date
 
-from data_types import Timeline
+from data_types import Timeline, TimePoint
 
 
 class TestTimeline(unittest.TestCase):
@@ -11,8 +10,8 @@ class TestTimeline(unittest.TestCase):
 
         # Arrange
         tl = Timeline()
-        min_ans = date(year=1900, month=1, day=1)
-        max_ans = date(year=1975, month=6, day=29)
+        min_ans = TimePoint(year=1900, month=1, day=1)
+        max_ans = TimePoint(year=1975, month=6, day=29)
 
         # Act
         tl.load_from_file("test/data/test_sample.yaml")
@@ -29,8 +28,8 @@ class TestTimeline(unittest.TestCase):
                        {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
                        {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
                        ]
-        min_ans = date(year=1970, month=8, day=17)
-        max_ans = date(year=2040, month=6, day=5)
+        min_ans = TimePoint(year=1970, month=8, day=17)
+        max_ans = TimePoint(year=2040, month=6, day=5)
 
         # Act
         tl = Timeline()

@@ -8,9 +8,11 @@ import pygame
 from pygame_manager import PyGameManager as pgm
 import color
 
-from datetime import date, timedelta
+from datetime import timedelta
 import data_types
 from algorithms import interpolate
+
+TimePoint = data_types.TimePoint
 
 # Utility struct to hold info about the event records we are drawing.
 LabelInfo = namedtuple("LabelInfo", "id x_vals label_surf label_rect")
@@ -24,14 +26,14 @@ class Timeview:
 
     def __init__(self, timeline: data_types.Timeline):
         self.timeline = timeline
-        self.min: date = self.timeline.min
-        self.max: date = self.timeline.max
+        self.min: TimePoint = self.timeline.min
+        self.max: TimePoint = self.timeline.max
 
         # The view is redrawn based on whether it has changed. So. Make sure it changes to begin.
-        self.render_min = data_types.SlidingValue(self.max.toordinal())
-        self.render_max = data_types.SlidingValue(self.min.toordinal())
-        self.render_min.set(self.min.toordinal())
-        self.render_max.set(self.max.toordinal())
+        self.render_min = data_types.SlidingValue(self.max.ordinal())
+        self.render_max = data_types.SlidingValue(self.min.ordinal())
+        self.render_min.set(self.min.ordinal())
+        self.render_max.set(self.max.ordinal())
 
         # Store the drawable information to avoid recalculating every frame.
         self.guidelines = []
@@ -47,19 +49,19 @@ class Timeview:
             bg.hsva = (hue, 50, 90, 0)
             self.record_colors[rec_id] = (fg, bg)
 
-    def contains(self, timelike: Union[date, data_types.TimeReference, data_types.EventRecord]) -> bool:
-        if type(timelike) is date:
+    def contains(self, timelike: Union[data_types.TimePoint, data_types.TimeReference, data_types.EventRecord]) -> bool:
+        if type(timelike) is TimePoint:
             return self.contains_date(timelike)
         elif type(timelike) is data_types.TimeReference:
             return self.contains_reference(timelike)
         elif type(timelike) is data_types.EventRecord:
             return self.contains_record(timelike)
 
-    def contains_date(self, d: date) -> bool:
+    def contains_date(self, d: TimePoint) -> bool:
         """
         Determine whether the date `d` is currently visible to the Timeview.
         Args:
-            d: A date to compare
+            d: A TimePoint to compare
 
         Returns:
             True if `d` falls within the Timeview's purview, false otherwise.
@@ -75,8 +77,8 @@ class Timeview:
         Returns:
             True if the TimeReference should be visible in this Timeview, false otherwise.
         """
-        if type(tr.max) is date and tr.max < self.min \
-                or type(tr.min) is date and tr.min > self.max:
+        if type(tr.max) is TimePoint and tr.max < self.min \
+                or type(tr.min) is TimePoint and tr.min > self.max:
             return False
 
         return True
@@ -97,8 +99,8 @@ class Timeview:
 
         # We may be zoomed inside the record such that the start and
         # end are not in view, but we still want to draw the record.
-        if type(rec.start.min) is date and rec.start.min > self.max \
-                or type(rec.end.max) is date and rec.end.max < self.min:
+        if type(rec.start.min) is TimePoint and rec.start.min > self.max \
+                or type(rec.end.max) is TimePoint and rec.end.max < self.min:
             return False
         return True
 
@@ -113,43 +115,43 @@ class Timeview:
                 visible_records.append(rec)
         return visible_records
 
-    def zoom_in(self, focus: date) -> None:
+    def zoom_in(self, focus: TimePoint) -> None:
         """
-        Changes the view's min and/or max to narrow the view on the provided date.
+        Changes the view's min and/or max to narrow the view on the provided TimePoint.
         Args:
-            focus: The date to zoom in towards.
+            focus: The TimePoint to zoom in towards.
 
         Returns:
             None
         """
         assert self.contains(focus), "Cannot zoom on a date outside the view"
 
-        min_ord = self.min.toordinal()
-        max_ord = self.max.toordinal()
-        foc_ord = focus.toordinal()
+        min_ord = self.min.ordinal()
+        max_ord = self.max.ordinal()
+        foc_ord = focus.ordinal()
 
         lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
         hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
 
         self.min = self.min + lo_shift
         self.max = self.max - hi_shift
-        self.render_min.set(self.min.toordinal())
-        self.render_max.set(self.max.toordinal())
+        self.render_min.set(self.min.ordinal())
+        self.render_max.set(self.max.ordinal())
 
-    def zoom_out(self, focus: date) -> None:
+    def zoom_out(self, focus: TimePoint) -> None:
         """
-        Changes the view's min and/or max to widen the view around the provided date.
+        Changes the view's min and/or max to widen the view around the provided TimePoint.
         Args:
-            focus: The date to zoom out from.
+            focus: The TimePoint to zoom out from.
 
         Returns:
             None
         """
         assert self.contains(focus), "Cannot zoom on a date outside the view"
 
-        min_ord = self.min.toordinal()
-        max_ord = self.max.toordinal()
-        foc_ord = focus.toordinal()
+        min_ord = self.min.ordinal()
+        max_ord = self.max.ordinal()
+        foc_ord = focus.ordinal()
 
         zoom_frac = 1/(1-self.ZOOM_RATIO)
         lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
@@ -163,8 +165,8 @@ class Timeview:
             self.max = self.max + lo_shift
         except OverflowError as oe:
             print("Warning! Attempting to view past the end of time!")
-        self.render_min.set(self.min.toordinal())
-        self.render_max.set(self.max.toordinal())
+        self.render_min.set(self.min.ordinal())
+        self.render_max.set(self.max.ordinal())
 
     def pan(self, delta: timedelta) -> None:
         """
@@ -186,8 +188,8 @@ class Timeview:
         except OverflowError as oe:
             print("Warning! Attempting to pan view past the end of time!")
 
-        self.render_min.set(self.min.toordinal())
-        self.render_max.set(self.max.toordinal())
+        self.render_min.set(self.min.ordinal())
+        self.render_max.set(self.max.ordinal())
 
     def render(self, surf: pygame.Surface):
 
@@ -214,7 +216,7 @@ class Timeview:
         if regen_view:
             self.guidelines = self.generate_guidelines(self.min, self.max)
         for gl in self.guidelines:
-            glx = interpolate(gl.toordinal(), timeview_range, screen_range)
+            glx = interpolate(gl.ordinal(), timeview_range, screen_range)
             pygame.draw.line(surface=surf, color=color.LIGHT_GRAY, start_pos=(glx, 0), end_pos=(glx, height))
             antialias = True
             text = font.render(str(gl.year), antialias, color.LIGHT_GRAY)
@@ -232,10 +234,10 @@ class Timeview:
             # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
             self.label_infos = []
             for rec in visible_records:
-                xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.toordinal(), timeview_range, screen_range)
-                xse = width if rec.start.max == math.inf else interpolate(rec.start.max.toordinal(), timeview_range, screen_range)
-                xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.toordinal(), timeview_range, screen_range)
-                xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.toordinal(), timeview_range, screen_range)
+                xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.ordinal(), timeview_range, screen_range)
+                xse = width if rec.start.max == math.inf else interpolate(rec.start.max.ordinal(), timeview_range, screen_range)
+                xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.ordinal(), timeview_range, screen_range)
+                xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.ordinal(), timeview_range, screen_range)
                 antialias = True  # render takes no keyword arguments.
                 label_surf = font.render(rec.name, antialias, color.BLACK)
                 lw, lh = label_surf.get_size()
@@ -294,7 +296,7 @@ class Timeview:
             surf.blit(li.label_surf, (label_x, li.label_rect.y+2))
 
     @staticmethod
-    def generate_guidelines(min_date: date, max_date: date) -> List[date]:
+    def generate_guidelines(min_date: TimePoint, max_date: TimePoint) -> List[TimePoint]:
         """
         Figure out where to draw guidelines to help orient the viewer.
 
@@ -303,7 +305,7 @@ class Timeview:
             max_date: The end of the visible time range.
 
         Returns:
-            A list of dates within the given range at which to draw orientation guidelines.
+            A list of TimePoints within the given range at which to draw orientation guidelines.
         """
 
         # Choose guidelines to show to always/usually show at least one, but not too many.
@@ -325,5 +327,5 @@ class Timeview:
         chosen_dates = []
         for year in range(min_date.year+1, max_date.year+1):
             if year % mod == 0:
-                chosen_dates.append(date(year=year, month=1, day=1))
+                chosen_dates.append(TimePoint(year=year, month=1, day=1))
         return chosen_dates
