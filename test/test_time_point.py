@@ -119,7 +119,6 @@ class TestTimePoint(unittest.TestCase):
         tp1 = TimePoint.from_ordinal(ans1.ordinal())
         tp2 = TimePoint.from_ordinal(ans2.ordinal())
 
-
         # Assert
         self.assertEqual(tp1, ans1)
         self.assertEqual(tp2, ans2)

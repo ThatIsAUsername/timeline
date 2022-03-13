@@ -14,7 +14,7 @@ class TestTimeReference(unittest.TestCase):
         # Arrange
         date_str = "01 Jan 2021"
 
-        date_ans = TimePoint(day=1, month=months.index('jan'), year=2021)
+        date_ans = TimePoint(day=1, month=months.index('Jan'), year=2021)
         date_ans_ord = date_ans.ordinal()
 
         # Act
@@ -32,9 +32,9 @@ class TestTimeReference(unittest.TestCase):
         date_str = "Jan 2021"
 
         # The provided date includes no day, so it should assume a min and max of the month's bounds.
-        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg = TimePoint(day=1, month=months.index('Jan'), year=2021)
         ans_beg_ord = ans_beg.ordinal()
-        ans_end = TimePoint(day=31, month=months.index('jan'), year=2021)
+        ans_end = TimePoint(day=31, month=months.index('Jan'), year=2021)
         ans_end_ord = ans_end.ordinal()
 
         # Act
@@ -50,9 +50,9 @@ class TestTimeReference(unittest.TestCase):
         date_str = "2021"
 
         # The provided date includes no day, so it should assume a min and max of the month's bounds.
-        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg = TimePoint(day=1, month=months.index('Jan'), year=2021)
         ans_beg_ord = ans_beg.ordinal()
-        ans_end = TimePoint(day=31, month=months.index('dec'), year=2021)
+        ans_end = TimePoint(day=31, month=months.index('Dec'), year=2021)
         ans_end_ord = ans_end.ordinal()
 
         # Act
@@ -103,9 +103,9 @@ class TestTimeReference(unittest.TestCase):
         later_str = "05 Mar 2022"  # This one must be after
 
         # This time reference should thus begin at after_str and end at before_str.
-        ans_beg = TimePoint(day=1, month=months.index('jan'), year=2021)
+        ans_beg = TimePoint(day=1, month=months.index('Jan'), year=2021)
         ans_beg_ord = ans_beg.ordinal()
-        ans_end = TimePoint(day=5, month=months.index('mar'), year=2022)
+        ans_end = TimePoint(day=5, month=months.index('Mar'), year=2022)
         ans_end_ord = ans_end.ordinal()
 
         # Act

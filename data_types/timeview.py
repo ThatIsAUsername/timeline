@@ -124,7 +124,7 @@ class Timeview:
         Returns:
             None
         """
-        assert self.contains(focus), "Cannot zoom on a date outside the view"
+        assert self.contains(focus), f"Cannot zoom on a date ({focus}) outside the view ({self.min}-{self.max})"
 
         min_ord = self.min.ordinal()
         max_ord = self.max.ordinal()
@@ -147,7 +147,7 @@ class Timeview:
         Returns:
             None
         """
-        assert self.contains(focus), "Cannot zoom on a date outside the view"
+        assert self.contains(focus), f"Cannot zoom on a date ({focus}) outside the view ({self.min}-{self.max})"
 
         min_ord = self.min.ordinal()
         max_ord = self.max.ordinal()
@@ -159,12 +159,13 @@ class Timeview:
 
         try:
             self.min = self.min - hi_shift
-        except OverflowError as oe:
-            print("Warning! Attempting to view past the beginning of time!")
+        except (ValueError, OverflowError) as oe:
+            print(f"Warning! Attempting to view past the beginning of time! Details:\n  {str(oe)}")
         try:
             self.max = self.max + lo_shift
-        except OverflowError as oe:
-            print("Warning! Attempting to view past the end of time!")
+        except (ValueError, OverflowError) as oe:
+            print(f"Warning! Attempting to view past the end of time! Details:\n  {str(oe)}")
+
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
 

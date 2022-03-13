@@ -1,16 +1,24 @@
+
 from typing import Union
 from time import struct_time
-from datetime import timedelta
+from datetime import date, timedelta
 import calendar
+import math
 
 UNUSED_STRUCT_FIELDS = (0, 0, 0, 0, 0, -1)  # hour, min, sec, wday, yday, isdst
 
 
 class TimePoint:
-
+    """
+    Sure datetime already exists, but it only goes back to year 1. TimePoint is a wrapper around a
+    struct_time object to provide an easy interface while supporting a wide date range.
+    """
     def __init__(self, year: int = 0, month: int = 0, day: int = 0):
         self._time: struct_time = struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
         self.DAY_ZERO = None  # Initialized at the bottom of this file.
+
+    def __repr__(self) -> str:
+        return f"TimePoint(year={self.year}, month={self.month}, day={self.day})"
 
     @staticmethod
     def from_ordinal(ordinal: int) -> 'TimePoint':
@@ -108,8 +116,8 @@ class TimePoint:
             other: A TimePoint to differ against or a timedelta to subtract.
 
         Returns:
-            A timedelta with the number of days between the two TimePoints (if other is a TimePoint) or
-            the TimePoint calculated by subtracting the timedelta from self.
+            If other is a TimePoint: A timedelta with the number of days between the two TimePoints, or
+            If other is a timedelta: The TimePoint calculated by subtracting the timedelta from self.
         """
         # If we are subtracting a timedelta instead of a TimePoint, just invert and pass it to __add__
         if isinstance(other, timedelta):
@@ -119,43 +127,43 @@ class TimePoint:
         if self.year == other.year and self.month == other.month:
             return timedelta(days=self.day - other.day)
 
-        # Figure out which date is older, so we can iterate forward thence.
-        older, newer = (self, other) if self < other else (other, self)
+        self_ok = 1 <= self.year <= 9999
+        other_ok = 1 <= other.year <= 9999
+        if self_ok and other_ok:
+            # If we are in the normal range, let datetime do the work.
+            try:
+                difference: timedelta = date(*self._time[:3]) - date(*other._time[:3])
+                return difference
+            except (ValueError, OverflowError) as err:
+                # ValueError if the datetime is constructed out of range,
+                # OverflowError if subtracting a timedelta takes it out of range.
+                pass  # Fall through to handle this case manually.
 
-        total_days = 0
-        track_year = older.year
-        track_month = older.month
+        # This calculation occurs outside the accepted range for datetime [1, 9999].
+        # Ensure both dates are inside that range and try again.
+        # Note this just straightforwardly extends the current calendar back with leap
+        # years and everything, so may not match historic dating systems.
 
-        # Find the number of days left in that month
-        weekday, month_len = calendar.monthrange(older.year, older.month)
-        total_days += month_len - older.day
-        track_month += 1
-        # If track_month is too high, roll the year.
-        if track_month == 13:
-            track_month = 1
-            track_year += 1
+        # Get the number of millenia away from the year 2000, so we can shift into the valid range.
+        shift_self_years = 0 if self_ok else 1000 * int(float(2000-self.year) / 1000)
+        shift_other_years = 0 if other_ok else 1000 * int(float(2000-other.year) / 1000)
+        days_per_year = 365.2425
+        shift_self_days = math.floor(shift_self_years * days_per_year)
+        shift_other_days = math.floor(shift_other_years * days_per_year)
 
-        # Count days of all months in between.
-        while track_year < newer.year or track_month < newer.month:
-            # Add the days from track_month, then increment.
-            weekday, month_len = calendar.monthrange(track_year, track_month)
-            total_days += month_len
-            track_month += 1
+        # Create shifted date objects inside the valid range for datetime.date.
+        self_adj = self.year+shift_self_years
+        other_adj = other.year+shift_other_years
+        self_dt = date(*(self_adj,) + self._time[1:3])
+        other_dt = date(*(other_adj,) + other._time[1:3])
 
-            # If track_month is too high, roll the year.
-            if track_month == 13:
-                track_month = 1
-                track_year += 1
+        # All right. Finally we can just... subtract.
+        diff_days = (self_dt - other_dt).days
 
-        # Count days in final month
-        total_days += newer.day
-
-        # Negate if self is older than other.
-        if self < other:
-            total_days = -total_days
-
-        # Convert to a timedelta and return.
-        return timedelta(days=total_days)
+        # Not done yet though; have to roll the deltas back in from when we initially shifted each date.
+        diff_days = (diff_days + (shift_other_days - shift_self_days))
+        delta = timedelta(days=diff_days)
+        return delta
 
     def __gt__(self, other: 'TimePoint'):
         if isinstance(other, TimePoint):

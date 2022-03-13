@@ -97,8 +97,8 @@ class TestTimeview(unittest.TestCase):
         for tr in contains_false:
             self.assertFalse(view.contains(tr))
 
-        early_date = date(year=1970, month=8, day=16)
-        late_date = date(year=2040, month=6, day=6)
+        early_date = TimePoint(year=1970, month=8, day=16)
+        late_date = TimePoint(year=2040, month=6, day=6)
         for dd in [early_date, late_date]:
             self.assertFalse(view.contains(dd))
 
@@ -134,8 +134,8 @@ class TestTimeview(unittest.TestCase):
         # the view to exclude the zoomed-upon point.
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_in(min_date)
@@ -148,8 +148,8 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_in(max_date)
@@ -162,9 +162,9 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        mid_date = date(year=2005, month=5, day=7)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        mid_date = TimePoint(year=2005, month=5, day=7)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_in(mid_date)
@@ -177,8 +177,8 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_out(min_date)
@@ -191,8 +191,8 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_out(max_date)
@@ -205,9 +205,9 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        mid_date = date(year=2005, month=5, day=7)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        mid_date = TimePoint(year=2005, month=5, day=7)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
         view.zoom_out(mid_date)
@@ -220,13 +220,13 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         delta = timedelta(days=10)
 
-        min_ans = date(year=1970, month=8, day=27)
-        max_ans = date(year=2040, month=6, day=15)
+        min_ans = TimePoint(year=1970, month=8, day=27)
+        max_ans = TimePoint(year=2040, month=6, day=15)
 
         # Act
         view.pan(delta)
@@ -239,13 +239,13 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = date(year=1970, month=8, day=17)
-        max_date = date(year=2040, month=6, day=5)
+        min_date = TimePoint(year=1970, month=8, day=17)
+        max_date = TimePoint(year=2040, month=6, day=5)
 
         delta = timedelta(days=-4)
 
-        min_ans = date(year=1970, month=8, day=13)
-        max_ans = date(year=2040, month=6, day=1)
+        min_ans = TimePoint(year=1970, month=8, day=13)
+        max_ans = TimePoint(year=2040, month=6, day=1)
 
         # Act
         view.pan(delta)

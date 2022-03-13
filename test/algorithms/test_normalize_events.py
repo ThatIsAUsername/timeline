@@ -21,7 +21,7 @@ class TestNormalizeEvents(unittest.TestCase):
                        {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
                        ]
         birth_date = TimePoint(day=17, month=months.index('Aug'), year=1970)
-        death_date = TimePoint(day=5, month=months.index('Aun'), year=2040)
+        death_date = TimePoint(day=5, month=months.index('Jun'), year=2040)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
@@ -45,8 +45,8 @@ class TestNormalizeEvents(unittest.TestCase):
                        {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
                        {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
                        ]
-        birth_date = TimePoint(day=17, month=months.index('aug'), year=1970)
-        death_date = TimePoint(day=5, month=months.index('jun'), year=2040)
+        birth_date = TimePoint(day=17, month=months.index('Aug'), year=1970)
+        death_date = TimePoint(day=5, month=months.index('Jun'), year=2040)
         start_ans = -math.inf
         end_ans = math.inf
 
@@ -93,7 +93,7 @@ class TestNormalizeEvents(unittest.TestCase):
         rec_id = 'eternity_past'
         record_list = [{'name': 'Eternity past', 'id': rec_id, 'end': '5 Jun 2040'}]
         rec_beg = -math.inf
-        rec_end = TimePoint(day=5, month=months.index('jun'), year=2040)
+        rec_end = TimePoint(day=5, month=months.index('Jun'), year=2040)
 
         # Act
         records: Dict[str, EventRecord] = parse_record_list(record_list)
