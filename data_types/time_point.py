@@ -8,13 +8,61 @@ import math
 UNUSED_STRUCT_FIELDS = (0, 0, 0, 0, 0, -1)  # hour, min, sec, wday, yday, isdst
 
 
+def construct_time(year, month, day) -> struct_time:
+    """
+    Utility function to construct a valid struct_time, wrapping day/month fields as needed.
+    Args:
+        year: The year to represent.
+        month: The month in the given year. Will be wrapped (changing the year) if out of bounds.
+        day: The day in the given month. Will be wrapped (changing the month/year) if out of bounds.
+
+    Returns:
+        A struct_time object representing the described point in time.
+    """
+    # If the values are trivially valid, just construct and return.
+    if (1 <= month <= 12) and (1 <= day <= 28):
+        return struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
+
+    # Otherwise, wrap if needed, starting at the month level.
+    while month > 12:
+        year += 1
+        month -= 12
+    while month < 1:
+        year -= 1
+        month += 12
+
+    # Done. Now wrap days. First find the number of days in the current month.
+    weekday, month_len = calendar.monthrange(year, month)
+
+    # Handle the case where days is larger than the current month.
+    while day > month_len:
+        day -= month_len
+        month = month + 1
+        if month > 12:  # Wrap to January.
+            year += 1
+            month = 1
+        weekday, month_len = calendar.monthrange(year, month)  # Get the new month length.
+
+    # Handle the case where days is negative.
+    while day < 1:
+        weekday, month_len = calendar.monthrange(year, month)  # Get the length of the prior month.
+        day += month_len
+        month -= 1
+        if month < 1:
+            year -= 1
+            month = 12
+
+    # Construct our final reconciled struct_time.
+    return struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
+
+
 class TimePoint:
     """
     Sure datetime already exists, but it only goes back to year 1. TimePoint is a wrapper around a
     struct_time object to provide an easy interface while supporting a wide date range.
     """
     def __init__(self, year: int = 0, month: int = 0, day: int = 0):
-        self._time: struct_time = struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
+        self._time: struct_time = construct_time(year, month, day)
         self.DAY_ZERO = None  # Initialized at the bottom of this file.
 
     def __repr__(self) -> str:

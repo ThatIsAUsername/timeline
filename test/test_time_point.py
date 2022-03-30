@@ -46,6 +46,31 @@ class TestTimePoint(unittest.TestCase):
         self.assertGreaterEqual(tp, tp_same)
         self.assertGreaterEqual(tp, tp_sooner)
 
+    def test_construct_normalize(self):
+
+        # Arrange
+        y1, m1, d1 = 1800, 5, 35  # should roll to June 4
+        y1a, m1a, d1a = 1800, 6, 4
+
+        y2, m2, d2 = 1800, 6, 35  # should roll to July 5
+        y2a, m2a, d2a = 1800, 7, 5
+
+        y3, m3, d3 = 1800, 12, 35  # should roll to 4 Jan 1801
+        y3a, m3a, d3a = 1801, 1, 4
+
+        # Act
+        tp1 = TimePoint(year=y1, month=m1, day=d1)
+        tp1a = TimePoint(year=y1a, month=m1a, day=d1a)
+        tp2 = TimePoint(year=y2, month=m2, day=d2)
+        tp2a = TimePoint(year=y2a, month=m2a, day=d2a)
+        tp3 = TimePoint(year=y3, month=m3, day=d3)
+        tp3a = TimePoint(year=y3a, month=m3a, day=d3a)
+
+        # Assert
+        self.assertEqual(tp1, tp1a)
+        self.assertEqual(tp2, tp2a)
+        self.assertEqual(tp3, tp3a)
+
     def test_subtract(self):
         # Arrange
         y1, m1, d1 = 1800, 5, 2
