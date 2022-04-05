@@ -2,6 +2,7 @@
 from typing import Union
 from time import struct_time
 from datetime import date, timedelta
+from data_types import EventDuration
 import calendar
 import math
 
@@ -45,12 +46,12 @@ def construct_time(year, month, day) -> struct_time:
 
     # Handle the case where days is negative.
     while day < 1:
-        weekday, month_len = calendar.monthrange(year, month)  # Get the length of the prior month.
-        day += month_len
         month -= 1
         if month < 1:
             year -= 1
             month = 12
+        weekday, month_len = calendar.monthrange(year, month)  # Get the length of the prior month.
+        day += month_len
 
     # Construct our final reconciled struct_time.
     return struct_time((year, month, day) + UNUSED_STRUCT_FIELDS)
@@ -111,7 +112,7 @@ class TimePoint:
     # Operator overrides
     # ------------------------------------------------------------
 
-    def __add__(self, delta: timedelta) -> 'TimePoint':
+    def __add__(self, delta: Union[timedelta, EventDuration]) -> 'TimePoint':
         """
         Create a new TimePoint by adding the timedelta to the time from self.
 
@@ -122,38 +123,18 @@ class TimePoint:
         """
         year = self.year
         month = self.month
-        day = self.day + delta.days  # Calculate our new day.
+        day = self.day
 
-        # If this new day isn't in range, roll the month/year to adjust until it is.
-        weekday, month_len = calendar.monthrange(year, month)
-        while day < 1 or day > month_len:
-            if day < 1:  # We are shifting to the past.
+        # Handle the case delta is an EventDuration.
+        if isinstance(delta, EventDuration):
+            return TimePoint(year=year+delta.years, month=month+delta.months, day=day+delta.days)
+        elif isinstance(delta, timedelta):
+            # timedelta is specified only in days.
+            return TimePoint(year=year, month=month, day=day+delta.days)
+        else:
+            raise ValueError(f"Cannot add a {type(delta)} to a TimePoint!")
 
-                # Roll the month (and the year if needed).
-                month -= 1
-                if month < 1:
-                    month = 12
-                    year -= 1
-
-                # Adjust the day count based on the month we just rolled.
-                weekday, month_len = calendar.monthrange(year, month)
-                day += month_len
-
-            if day > month_len:  # We are shifting to the future.
-
-                # Roll the month
-                month += 1
-                if month > 12:
-                    month = 1
-                    year += 1
-
-                # Adjust the day based on the month we rolled.
-                weekday, month_len = calendar.monthrange(year, month)
-                day -= month_len
-
-        return TimePoint(year=year, month=month, day=day)
-
-    def __sub__(self, other: Union['TimePoint', timedelta]) -> Union['TimePoint', timedelta]:
+    def __sub__(self, other: Union['TimePoint', timedelta, EventDuration]) -> Union['TimePoint', timedelta]:
         """
         If other is a TimePoint:
             Calculate the timedelta between this date and the other one. Can be negative.
@@ -170,6 +151,8 @@ class TimePoint:
         # If we are subtracting a timedelta instead of a TimePoint, just invert and pass it to __add__
         if isinstance(other, timedelta):
             return self + timedelta(days=-other.days)
+        if isinstance(other, EventDuration):
+            return TimePoint(year=self.year-other.years, month=self.month-other.months, day=self.day-other.days)
 
         # If both dates are in the same month, treat this as a special case.
         if self.year == other.year and self.month == other.month:

@@ -201,6 +201,154 @@ class TestNormalizeEvents(unittest.TestCase):
         # Assert
         self.assertIn(rec_id, str(context.exception))
 
+    def test_duration_simple(self):
+
+        # Arrange
+        rec_id = 'start_and_duration'
+        record_list = [{'name': 'Start and Duration',
+                        'id': rec_id,
+                        'start': '6 Jun 2040',
+                        'duration': '1y 1m 10d'}]
+        start_ans = TimePoint(year=2040, month=6, day=6)
+        end_ans = TimePoint(year=2041, month=7, day=16)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_ans)
+        self.assertEqual(rec.start.max, start_ans)
+        self.assertEqual(rec.end.min, end_ans)
+        self.assertEqual(rec.end.max, end_ans)
+
+    def test_duration_start_after(self):
+
+        # Arrange
+        rec_id = 'start_and_duration'
+        record_list = [{'name': 'Start and Duration',
+                        'id': rec_id,
+                        'start_after': '6 Jun 2040',
+                        'duration': '1y 1m 10d'}]
+        start_ans = TimePoint(year=2040, month=6, day=6)
+        end_ans = TimePoint(year=2041, month=7, day=16)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_ans)
+        self.assertEqual(rec.start.max, math.inf)
+        self.assertEqual(rec.end.min, end_ans)
+        self.assertEqual(rec.end.max, math.inf)
+
+    def test_duration_uncertain_start(self):
+
+        # Specify an uncertain start and a duration. Ensure the end min/max are normalized correctly.
+        # Arrange
+        rec_id = 'uncertain_start_duration'
+        record_list = [{'name': 'Uncertain Start with Duration',
+                        'id': rec_id,
+                        'start_after': '6 Jun 2040',
+                        'start_before': '10 Jul 2040',
+                        'duration': '1y 1m 10d'}]
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
+        start_max_ans = TimePoint(year=2040, month=7, day=10)
+        end_min_ans = TimePoint(year=2041, month=7, day=16)
+        end_max_ans = TimePoint(year=2041, month=8, day=20)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_duration_uncertain_start_end(self):
+        # Specify uncertain start and ends that are not strictly duration apart. Check normalization.
+        # Arrange
+        rec_id = 'duration_uncertain_start_end'
+        record_list = [{'name': 'Uncertain Start and End with Duration',
+                        'id': rec_id,
+                        'start_after': '6 May 2040',  # Duration too short; this will shift right to match end_after.
+                        'start_before': '10 Jul 2040',
+                        'end_after': '16 Jul 2041',
+                        'end_before': '20 Sep 2041',  # Duration too short; this will shift left to match start_before.
+                        'duration': '1y 1m 10d'}]
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
+        start_max_ans = TimePoint(year=2040, month=7, day=10)
+        end_min_ans = TimePoint(year=2041, month=7, day=16)
+        end_max_ans = TimePoint(year=2041, month=8, day=20)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_duration_uncertain_start_end_b(self):
+        # Specify uncertain start and ends that are not strictly duration apart. Check normalization.
+        # Arrange
+        rec_id = 'duration_uncertain_start_end'
+        record_list = [{'name': 'Uncertain Start and End with Duration',
+                        'id': rec_id,
+                        'start_after': '6 Jun 2040',
+                        'start_before': '10 Aug 2040',  # Duration too long; this will shift left to match end_before.
+                        'end_after': '16 Jun 2041',  # Duration too long; this will shift right to match start_after.
+                        'end_before': '20 Aug 2041',
+                        'duration': '1y 1m 10d'}]
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
+        start_max_ans = TimePoint(year=2040, month=7, day=10)
+        end_min_ans = TimePoint(year=2041, month=7, day=16)
+        end_max_ans = TimePoint(year=2041, month=8, day=20)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_duration_inconsistent(self):
+        # Specify duration, start, end, but no way to reconcile.
+        # Arrange
+        rec_id = 'duration_inconsistent'
+        record_list = [{'name': 'Duration Inconsistent with Start/End',
+                        'id': rec_id,
+                        'start_after': '6 Jun 2040',
+                        'start_before': '10 Aug 2040',
+                        'end_after': '16 Jul 2041',
+                        'end_before': '20 Aug 2041',
+                        'duration': '1y 4m 10d'}]
+        start_min_ans = TimePoint(year=2040, month=6, day=6)
+        start_max_ans = TimePoint(year=2040, month=7, day=10)
+        end_min_ans = TimePoint(year=2041, month=7, day=16)
+        end_max_ans = TimePoint(year=2041, month=8, day=20)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        with self.assertRaises(InconsistentTimeReferenceError) as context:
+            normalize_events(records)
+
+        # Assert
+        self.assertIn(rec_id, str(context.exception))
+
     def test_sample_file(self):
 
         # Arrange

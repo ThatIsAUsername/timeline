@@ -58,6 +58,9 @@ class TestTimePoint(unittest.TestCase):
         y3, m3, d3 = 1800, 12, 35  # should roll to 4 Jan 1801
         y3a, m3a, d3a = 1801, 1, 4
 
+        y4, m4, d4 = 1800, -1, -3  # should roll to 4 Jan 1801
+        y4a, m4a, d4a = 1799, 10, 28
+
         # Act
         tp1 = TimePoint(year=y1, month=m1, day=d1)
         tp1a = TimePoint(year=y1a, month=m1a, day=d1a)
@@ -65,11 +68,14 @@ class TestTimePoint(unittest.TestCase):
         tp2a = TimePoint(year=y2a, month=m2a, day=d2a)
         tp3 = TimePoint(year=y3, month=m3, day=d3)
         tp3a = TimePoint(year=y3a, month=m3a, day=d3a)
+        tp4 = TimePoint(year=y4, month=m4, day=d4)
+        tp4a = TimePoint(year=y4a, month=m4a, day=d4a)
 
         # Assert
         self.assertEqual(tp1, tp1a)
         self.assertEqual(tp2, tp2a)
         self.assertEqual(tp3, tp3a)
+        self.assertEqual(tp4, tp4a)
 
     def test_subtract(self):
         # Arrange

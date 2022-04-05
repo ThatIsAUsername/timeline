@@ -53,7 +53,7 @@ Records:
 - name: Car Accident
   id: car_accident
   start: 19 APR 1920
-  duration: 0
+  duration: 0d
 
 - name: Second Car
   id: second_car

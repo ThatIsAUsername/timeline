@@ -1,6 +1,6 @@
 
-from typing import Dict, List, Tuple
-from data_types import TimeReference
+from typing import Dict, List, Tuple, Union
+from data_types import TimeReference, EventDuration
 
 
 class EventRecord:
@@ -23,6 +23,7 @@ class EventRecord:
         self.end: TimeReference = TimeReference(absolute=end,
                                                 older=end_after,
                                                 later=end_before)
+        self.duration = self._extract_duration(record_data)
         self.sources: List = record_data['sources'] if 'sources' in record_data else []
 
     @staticmethod
@@ -35,6 +36,24 @@ class EventRecord:
         before_data = record_data[bef_key] if bef_key in record_data else None
 
         return absolute, after_data, before_data
+
+    @staticmethod
+    def _extract_duration(record_data: Dict) -> Union[EventDuration, None]:
+        dur: str = record_data['duration'] if 'duration' in record_data else None
+        if dur is None:
+            return None
+        tokens = dur.split(' ')
+        years = 0
+        months = 0
+        days = 0
+        for tok in tokens:
+            if tok[-1] == 'y':
+                years = int(tok[:-1])
+            elif tok[-1] == 'm':
+                months = int(tok[:-1])
+            elif tok[-1] == 'd':
+                days = int(tok[:-1])
+        return EventDuration(years=years, months=months, days=days)
 
     def __str__(self):
         return self.name

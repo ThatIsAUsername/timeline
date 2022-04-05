@@ -111,3 +111,9 @@ class TimeReference:
         date_min = TimePoint(year=year_min, month=month_min, day=day_min)
         date_max = TimePoint(year=year_max, month=month_max, day=day_max)
         return date_min, date_max
+
+    def has_min(self) -> bool:
+        return type(self.min) is TimePoint
+
+    def has_max(self) -> bool:
+        return type(self.max) is TimePoint

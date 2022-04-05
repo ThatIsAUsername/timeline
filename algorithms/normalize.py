@@ -3,7 +3,7 @@ import math
 from typing import Dict, List
 from collections import deque
 
-from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError
+from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, EventDuration
 
 
 def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> Dict[str, EventRecord]:
@@ -103,13 +103,69 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
             raise InconsistentTimeReferenceError(f"start.min of `{cid}` ({cur.start.min}) is after start.max ({cur.start.max}).")
 
         # Make sure the end can't be earlier than the start.
-        if type(cur.end.min) is float or \
-                (type(cur.end.min) is TimePoint and type(cur.start.min) is TimePoint and cur.end.min < cur.start.min):
+        if not cur.end.has_min() or \
+                (cur.end.has_min() and cur.start.has_min() and cur.end.min < cur.start.min):
             cur.end.min = cur.start.min  # End can't be before the earliest possible start time (could still be -inf).
             if verbose:
                 print(f"[normalize_event] Setting `{cid}` end.min to respect `{cid}` start.min ({cur.end.min}).")
 
-        if type(cur.end.min) is TimePoint and type(cur.end.max) is TimePoint and cur.end.min > cur.end.max:
+        # We can't handle duration in bind_reference_boundary because it is a self-referential dependency. Do it here.
+        if cur.duration:
+            dur: EventDuration = cur.duration
+
+            # If we know the start and not the end or vice versa, we can use one to bound the other.
+            if cur.start.has_min() and not cur.end.has_min():
+                cur.end.min = cur.start.min + dur
+            if not cur.start.has_min() and cur.end.has_min():
+                cur.start.min = cur.end.min - dur
+            if cur.start.has_max() and not cur.end.has_max():
+                cur.end.max = cur.start.max + dur
+            if not cur.start.has_max() and cur.end.has_max():
+                cur.start.max = cur.end.max - dur
+
+            # For a given event record which starts between S1 and S2, ends between E1 and E2, and has duration D:
+            # Then these constraints must hold: A1 + D = E1, and A2 + D = E2
+            #        |------------D-------------|
+            #    A1 - - - - - A2-------------E1 - - - - - E2
+            # Thus:
+            # If A1 + D < E1, then increase A1 until A1 + D == E1.
+            # If A1 + D > E1, then increase E1 until A1 + D == E1.
+            # If A2 + D > E2, then decrease A2 until A2 + D == E2.
+            # If A2 + D < E2, then decrease E2 until A2 + D == E2.
+            # If A1 + D > E2, then this TimePoint is inconsistent.
+            # If A2 + D < E1, then this TimePoint is inconsistent.
+            a1: TimePoint = cur.start.min if cur.start.has_min() else None
+            a2: TimePoint = cur.start.max if cur.start.has_max() else None
+            e1: TimePoint = cur.end.min if cur.end.has_min() else None
+            e2: TimePoint = cur.end.max if cur.end.has_max() else None
+
+            if a1 and e1:
+                a1_d = a1 + dur
+                if a1_d < e1:
+                    a1 = e1 - dur
+                elif a1_d > e1:
+                    e1 = a1_d
+
+            if a2 and e2:
+                a2_d = a2 + dur
+                if a2_d > e2:
+                    a2 = e2 - dur
+                elif a2_d < e2:
+                    e2 = a2_d
+
+            # Ensure durations are internally consistent.
+            if a1 and e2 and a1 + dur > e2:
+                raise InconsistentTimeReferenceError(f"Duration of event '{cur.name}' ({cid}) is inconsistent with the start and end minimums!")
+            if a2 and e1 and a2 + dur < e1:
+                raise InconsistentTimeReferenceError(f"Duration of event '{cur.name}' ({cid}) is inconsistent with the start and end maximums!")
+
+            # Assign our new and improved bounds back to the TimeReference.
+            cur.start.min = a1 if a1 else -math.inf
+            cur.start.max = a2 if a2 else math.inf
+            cur.end.min = e1 if e1 else -math.inf
+            cur.end.max = e2 if e2 else math.inf
+
+        if cur.end.has_min() and cur.end.has_max() and cur.end.min > cur.end.max:
             raise InconsistentTimeReferenceError(f"end.min of `{cid}` ({cur.end.min}) is after end.max ({cur.end.max}).")
 
         # This record is now done; we don't have to redo it on a future pass.
