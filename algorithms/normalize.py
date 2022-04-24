@@ -1,4 +1,5 @@
 
+import re
 import math
 from typing import Dict, List
 from collections import deque
@@ -155,7 +156,10 @@ def bind_reference_boundary(cid: str,
         return True  # This boundary is already known; no work required.
 
     # Description of what we are binding for printouts.
-    desc = f"{'start' if bind_start else 'end'}.{'min' if bind_min else 'max'}"
+    desc = f"{cid}.{'start' if bind_start else 'end'}.{'min' if bind_min else 'max'}"
+
+    if verbose:
+        print(f"[bind_reference_boundary] Binding {desc} to a concrete date.")
 
     # Rough outline of what this does, e.g. when finding start.min:
     # Retrieve start reference's 'older' constraints
@@ -171,9 +175,22 @@ def bind_reference_boundary(cid: str,
     constraints = cref._older_refs if bind_min else cref._later_refs
     resolved_constraints = []
     for constraint in constraints:
+        if verbose:
+            print(f"[bind_reference_boundary]   processing constraint '{constraint}'")
         if type(constraint) is TimePoint:
             resolved_constraints.append(constraint)
         elif type(constraint) is str:
+            # If '+' or '-' is present, split on it and then parse the offset.
+            offset = None
+            if '+' in constraint or '-' in constraint:
+                sign = -1 if '-' in constraint else 1
+                constraint, offset_str = re.split('[+-]+', constraint)
+                constraint, offset_str = constraint.strip(), offset_str.strip()
+                offset = EventDuration.parse(offset_str)
+                if sign == -1:
+                    offset.invert()
+
+            # Resolve the primary constraint if possible.
             fix_end = constraint[-1] == '$'
             fix_begin = constraint[0] == '^'
             constraint_id = constraint.strip('^$')
@@ -205,10 +222,13 @@ def bind_reference_boundary(cid: str,
                     print(f"[bind_reference_boundary] Record '{cid}' references unprocessed record '{constraint_id}'. Delaying.")
                 return False  # We don't have enough info yet. Hold off for now.
             else:  # The other record's relevant date is known; hold onto it.
+                # If there is an offset, add it to the relevant_boundary before storing. Not applicable for +/-inf.
+                if offset and type(relevant_boundary) is TimePoint:
+                    relevant_boundary = relevant_boundary + offset
                 resolved_constraints.append(relevant_boundary)  # This should either be a date or +/-inf.
                 if verbose:
-                    print(f"[bind_reference_boundary] Record '{cid}' {desc} must be {'after' if bind_min else 'before'}"
-                          f" {constraint_desc} ({relevant_boundary}).")
+                    print(f"[bind_reference_boundary]   {desc} must be {'after' if bind_min else 'before'}"
+                          f" {relevant_boundary} ({constraint_desc} + {offset}).")
 
     # If we made it this far, then resolved_constraints should be a list of dates, and maybe some +/-infinities.
     bind_value = None
@@ -216,11 +236,11 @@ def bind_reference_boundary(cid: str,
         # Unconstrained boundaries are just set to the extremes.
         bind_value = -math.inf if bind_min else math.inf
         if verbose:
-            print(f"[bind_reference_boundary] No constraints defined for '{cid}' {desc}. Setting to {bind_value}.")
+            print(f"[bind_reference_boundary] No constraints defined for {desc}. Setting to {bind_value}.")
     elif len(resolved_constraints) == 1:
         bind_value = resolved_constraints[0]
         if verbose:
-            print(f"[bind_reference_boundary] Setting '{cid}' {desc} to {bind_value}")
+            print(f"[bind_reference_boundary] Setting {desc} to {bind_value}")
     else:
         # Constraints can be a date or +/-inf if the constraining ref was itself unconstrained.
         # Ignore non-dates if any dates exist.
@@ -228,15 +248,15 @@ def bind_reference_boundary(cid: str,
         if len(real_dates) == 0:
             bind_value = resolved_constraints[0]  # Only possibility here should be +/-math.inf.
             if verbose:
-                print(f"[bind_reference_boundary] No real constraints found for '{cid}' {desc}. Setting to {bind_value}.")
+                print(f"[bind_reference_boundary] No real constraints found for {desc}. Setting to {bind_value}.")
         else:
             # Choose the best available constraint as our current bound.
             bind_value = max(real_dates) if bind_min else min(real_dates)
             if verbose:
-                print(f"[bind_reference_boundary] '{cid}' {desc} set to {bind_value}")
+                print(f"[bind_reference_boundary] {desc} set to {bind_value}")
 
     # At this point, we should have properly defined bind_value as a date or as -math.inf.
-    assert bind_value is not None, f"Failed to set '{cid}' {desc}!"
+    assert bind_value is not None, f"Failed to set {desc}!"
     if bind_min:
         cref.min = bind_value
     else:

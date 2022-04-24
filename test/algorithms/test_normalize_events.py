@@ -349,6 +349,64 @@ class TestNormalizeEvents(unittest.TestCase):
         # Assert
         self.assertIn(rec_id, str(context.exception))
 
+    def test_offset(self):
+        # Arrange
+        rec_id = 'offset_time'
+        record_list = [{'name': 'Resolved Time.',
+                        'id': 'resolved_time',
+                        'start': '6 Jun 2040',
+                        'end': '16 Jul 2041'},
+                       {'name': 'Offset Time',
+                        'id': rec_id,
+                        'start': 'resolved_time - 1y 1m 1d',
+                        'end': 'resolved_time + 1y 1m 1d'}
+                       ]
+        start_min_ans = TimePoint(year=2039, month=5, day=5)
+        start_max_ans = TimePoint(year=2039, month=5, day=5)
+        end_min_ans = TimePoint(year=2042, month=8, day=17)
+        end_max_ans = TimePoint(year=2042, month=8, day=17)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        self.assertIn(rec_id, records)
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_before_after_offset(self):
+        # Arrange
+        rec_id = 'offset_time'
+        record_list = [{'name': 'Resolved Time.',
+                        'id': 'resolved_time',
+                        'start': '6 Jun 2040',
+                        'end': '16 Jul 2041'},
+                       {'name': 'Offset Time',
+                        'id': rec_id,
+                        'start_after': '^resolved_time - 1y 1m 1d',
+                        'end_before': 'resolved_time$ + 1y 1m 1d'}
+                       ]
+        start_min_ans = TimePoint(year=2039, month=5, day=5)
+        start_max_ans = TimePoint(year=2042, month=8, day=17)
+        end_min_ans = TimePoint(year=2039, month=5, day=5)
+        end_max_ans = TimePoint(year=2042, month=8, day=17)
+
+        # Act
+        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        normalize_events(records)
+
+        # Assert
+        self.assertIn(rec_id, records)
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
     def test_sample_file(self):
 
         # Arrange

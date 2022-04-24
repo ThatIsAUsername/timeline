@@ -42,18 +42,7 @@ class EventRecord:
         dur: str = record_data['duration'] if 'duration' in record_data else None
         if dur is None:
             return None
-        tokens = dur.split(' ')
-        years = 0
-        months = 0
-        days = 0
-        for tok in tokens:
-            if tok[-1] == 'y':
-                years = int(tok[:-1])
-            elif tok[-1] == 'm':
-                months = int(tok[:-1])
-            elif tok[-1] == 'd':
-                days = int(tok[:-1])
-        return EventDuration(years=years, months=months, days=days)
+        return EventDuration.parse(dur)
 
     def __str__(self):
         return self.name

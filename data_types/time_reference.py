@@ -36,17 +36,25 @@ class TimeReference:
 
         if absolute:
             tokens = absolute.split()
-            if len(tokens) == 1 and not tokens[0].isdigit():
+            if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
                 # This must be a reference to another event.
                 tok = tokens[0]
+                offset_text = f"{absolute[len(tok):]}"  # Extract offset text if present.
+
+                justified = tok[0] == '^' or tok[-1] == '$'
+                if offset_text and not justified:
+                    # If we have an offset, then we assume a justification to the nearest boundary unless specified.
+                    # e.g. if we have a negative offset from another event, justify to the event's start.min.
+                    tok = f"^{tok}" if '-' in offset_text else f"{tok}$"
+
                 if tok[0] == '^' or tok[-1] == '$':
                     # If the ref ID is justified, just keep as is and add to both lists.
-                    self._older_refs.append(tok)
-                    self._later_refs.append(tok)
+                    self._older_refs.append(f"{tok}{offset_text}")
+                    self._later_refs.append(f"{tok}{offset_text}")
                 else:
                     # If it is not justified, justify it into the relative event lists.
-                    self._older_refs.append(f"^{tokens[0]}")
-                    self._later_refs.append(f"{tokens[0]}$")
+                    self._older_refs.append(f"^{tokens[0]}{offset_text}")
+                    self._later_refs.append(f"{tokens[0]}${offset_text}")
             else:
                 # Assume this represents a date string.
                 self.min, self.max = self._parse_input(tokens)
@@ -57,8 +65,8 @@ class TimeReference:
                 for tr in temp_refs:
                     # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
                     tokens = tr.split()
-                    if len(tokens) == 1 and not tokens[0].isdigit():  # Check if this is a time ref id.
-                        self._older_refs.append(tokens[0])
+                    if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                        self._older_refs.append(tr)
                     else:
                         old_min, old_max = self._parse_input(tokens)
                         self._older_refs.append(old_max if old_max is not None else tr)
@@ -67,8 +75,8 @@ class TimeReference:
                 for tr in temp_refs:
                     # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
                     tokens = tr.split()
-                    if len(tokens) == 1 and not tokens[0].isdigit():
-                        self._later_refs.append(tokens[0])
+                    if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                        self._later_refs.append(tr)
                     else:
                         l8r_min, l8r_max = self._parse_input(tr.split())
                         self._later_refs.append(l8r_min if l8r_min is not None else tr)
@@ -103,10 +111,12 @@ class TimeReference:
                 # monthrange returns a tuple of the weekday the month started, and the length of the month.
                 weekday, day_max = monthrange(year_max, month_max)
             else:
-                print(f"Failed to parse input date '{tokens}'")
+                raise ValueError(f"Failed to parse input date '{tokens}'")
                 return None, None
         elif len(tokens) == 0:
             return None, None
+        else:
+            raise ValueError(f"Could not parse input date '{tokens}'")
 
         date_min = TimePoint(year=year_min, month=month_min, day=day_min)
         date_max = TimePoint(year=year_max, month=month_max, day=day_max)
