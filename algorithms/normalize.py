@@ -4,7 +4,7 @@ import math
 from typing import Dict, List
 from collections import deque
 
-from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, EventDuration
+from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, TimeSpan
 
 
 def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> Dict[str, EventRecord]:
@@ -186,7 +186,7 @@ def bind_reference_boundary(cid: str,
                 sign = -1 if '-' in constraint else 1
                 constraint, offset_str = re.split('[+-]+', constraint)
                 constraint, offset_str = constraint.strip(), offset_str.strip()
-                offset = EventDuration.parse(offset_str)
+                offset = TimeSpan.parse(offset_str)
                 if sign == -1:
                     offset.invert()
 
@@ -266,7 +266,7 @@ def bind_reference_boundary(cid: str,
 
 def bind_duration(cur: EventRecord):
     cid = cur.id
-    dur: EventDuration = cur.duration
+    dur: TimeSpan = cur.duration
 
     # If we know the start and not the end or vice versa, we can use one to bound the other.
     if cur.start.has_min() and not cur.end.has_min():

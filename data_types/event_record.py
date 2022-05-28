@@ -1,6 +1,6 @@
 
 from typing import Dict, List, Tuple, Union
-from data_types import TimeReference, EventDuration
+from data_types import TimeReference, TimeSpan
 
 
 class EventRecord:
@@ -38,11 +38,11 @@ class EventRecord:
         return absolute, after_data, before_data
 
     @staticmethod
-    def _extract_duration(record_data: Dict) -> Union[EventDuration, None]:
+    def _extract_duration(record_data: Dict) -> Union[TimeSpan, None]:
         dur: str = record_data['duration'] if 'duration' in record_data else None
         if dur is None:
             return None
-        return EventDuration.parse(dur)
+        return TimeSpan.parse(dur)
 
     def __str__(self):
         return self.name

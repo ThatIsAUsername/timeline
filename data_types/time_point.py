@@ -2,7 +2,7 @@
 from typing import Union
 from time import struct_time
 from datetime import date, timedelta
-from data_types import EventDuration
+from data_types import TimeSpan
 import calendar
 import math
 
@@ -112,7 +112,7 @@ class TimePoint:
     # Operator overrides
     # ------------------------------------------------------------
 
-    def __add__(self, delta: Union[timedelta, EventDuration]) -> 'TimePoint':
+    def __add__(self, delta: Union[timedelta, TimeSpan]) -> 'TimePoint':
         """
         Create a new TimePoint by adding the timedelta to the time from self.
 
@@ -126,7 +126,7 @@ class TimePoint:
         day = self.day
 
         # Handle the case delta is an EventDuration.
-        if isinstance(delta, EventDuration):
+        if isinstance(delta, TimeSpan):
             return TimePoint(year=year+delta.years, month=month+delta.months, day=day+delta.days)
         elif isinstance(delta, timedelta):
             # timedelta is specified only in days.
@@ -134,7 +134,7 @@ class TimePoint:
         else:
             raise ValueError(f"Cannot add a {type(delta)} to a TimePoint!")
 
-    def __sub__(self, other: Union['TimePoint', timedelta, EventDuration]) -> Union['TimePoint', timedelta]:
+    def __sub__(self, other: Union['TimePoint', timedelta, TimeSpan]) -> Union['TimePoint', timedelta]:
         """
         If other is a TimePoint:
             Calculate the timedelta between this date and the other one. Can be negative.
@@ -151,7 +151,7 @@ class TimePoint:
         # If we are subtracting a timedelta instead of a TimePoint, just invert and pass it to __add__
         if isinstance(other, timedelta):
             return self + timedelta(days=-other.days)
-        if isinstance(other, EventDuration):
+        if isinstance(other, TimeSpan):
             return TimePoint(year=self.year-other.years, month=self.month-other.months, day=self.day-other.days)
 
         # If both dates are in the same month, treat this as a special case.

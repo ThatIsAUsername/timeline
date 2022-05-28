@@ -1,5 +1,5 @@
 
-from .event_duration import EventDuration
+from .time_span import TimeSpan
 from .time_point import TimePoint
 from .time_reference import TimeReference
 from .event_record import EventRecord

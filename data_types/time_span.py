@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 
 @dataclass
-class EventDuration:
+class TimeSpan:
 
     years: int = 0
     months: int = 0
@@ -41,4 +41,4 @@ class EventDuration:
             else:
                 raise ValueError(f"Token {tok} doesn't specify a unit (must be d, m, or y)!")
 
-        return EventDuration(years=years, months=months, days=days)
+        return TimeSpan(years=years, months=months, days=days)
