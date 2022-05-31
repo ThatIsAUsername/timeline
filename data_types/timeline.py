@@ -1,8 +1,7 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 import yaml
 import math
 
-from datetime import date
 from data_types import EventRecord, TimePoint, IncoherentTimelineError
 import algorithms
 
@@ -13,13 +12,30 @@ class Timeline:
         self.min = -math.inf
         self.max = math.inf
 
-    def load_from_file(self, filename: str):
-        with open(filename) as file:
-            loaded = yaml.load(file, Loader=yaml.BaseLoader)
+    def load_records(self, inputs: Union[str, List[str]]):
+        """
+        Load record entries from one or more files to initialize this timeline.
+        If multiple files contain records with the same explicitly-set id, they
+        will be treated as the same event.
 
-        self.load_from_record_list(loaded['Records'])
+        Args:
+            inputs: Either a filename or a list of filenames containing event records.
+        """
+        # Wrap in a list if needed to simplify the following logic.
+        if type(inputs) is str:
+            inputs = [inputs]
 
-    def load_from_record_list(self, records: List[Dict]):
+        # Load all records from all provided files into one record list.
+        # Any duplicates will be reconciled in a later step.
+        record_list = []
+        for filename in inputs:
+            with open(filename) as file:
+                loaded = yaml.load(file, Loader=yaml.BaseLoader)
+                record_list.extend(loaded['Records'])
+
+        self.init_from_record_list(record_list)
+
+    def init_from_record_list(self, records: List[Dict]):
 
         # Parse the raw record data into a set of EventRecord objects, mapped by event ID.
         self.records = algorithms.parse_record_list(records)

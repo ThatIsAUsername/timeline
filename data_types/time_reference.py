@@ -18,68 +18,106 @@ class TimeReference:
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
                             If so modified, then this event will start and end at the indicated time.
                             If not modified, the beginning and end of this event will match those of the other event.
-                        If a date string, the day and month are optional, but day is required if month is present.
+                        If a date string, the day and month are optional, but month is required if day is present.
                         NOTE: If `absolute` is provided, then `before` and `after` are ignored.
             older: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
-                        If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
+                        If an ID, it may be modified to denote the start (^id) or end (id$) of the other event, and
+                        may also specify a math-based offset, e.g. "otherevent + 1y 2m 3d'
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
             later: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
-                        If an ID, it may be modified to denote the start (^id) or end (id$) of the other event.
+                        If an ID, it may be modified to denote the start (^id) or end (id$) of the other event, and
+                        may also specify a math-based offset, e.g. "otherevent - 1y 2m 3d'
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
         """
         self.min = None
         self.max = None
-        self._older_refs = []
-        self._later_refs = []
 
+        self._older_refs, self._later_refs = self._unpack_constraints(absolute, older, later)
+
+    def merge(self, absolute: str = '', older: Union[str, List[str]] = '', later: Union[str, List[str]] = ''):
+        """
+        Incorporate any constraints from `other`.
+        """
+
+        new_older_refs, new_later_refs = self._unpack_constraints(absolute, older, later)
+        self._older_refs.extend(new_older_refs)
+        self._later_refs.extend(new_later_refs)
+
+        # Unset the final answers so we know we need to recalculate them.
+        self.min = None
+        self.max = None
+
+    def _unpack_constraints(self, absolute: str = '', older: Union[str, List[str]] = '', later: Union[str, List[str]] = '') -> Tuple[List, List]:
+        # If absolute and self.absolute, make sure they match.
         if absolute:
-            tokens = absolute.split()
-            if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
-                # This must be a reference to another event.
-                tok = tokens[0]
-                offset_text = f"{absolute[len(tok):]}"  # Extract offset text if present.
-
-                justified = tok[0] == '^' or tok[-1] == '$'
-                if offset_text and not justified:
-                    # If we have an offset, then we assume a justification to the nearest boundary unless specified.
-                    # e.g. if we have a negative offset from another event, justify to the event's start.min.
-                    tok = f"^{tok}" if '-' in offset_text else f"{tok}$"
-
-                if tok[0] == '^' or tok[-1] == '$':
-                    # If the ref ID is justified, just keep as is and add to both lists.
-                    self._older_refs.append(f"{tok}{offset_text}")
-                    self._later_refs.append(f"{tok}{offset_text}")
-                else:
-                    # If it is not justified, justify it into the relative event lists.
-                    self._older_refs.append(f"^{tokens[0]}{offset_text}")
-                    self._later_refs.append(f"{tokens[0]}${offset_text}")
-            else:
-                # Assume this represents a date string.
-                self.min, self.max = self._parse_input(tokens)
+            older_constraints, later_constraints = self._unpack_absolute_constraints(absolute)
+        # Otherwise, unpack constraints
         else:
-            # Make sure any prior/later events are held in local lists.
-            if older:
-                temp_refs = older if type(older) is list else [older]
-                for tr in temp_refs:
-                    # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
-                    tokens = tr.split()
-                    if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
-                        self._older_refs.append(tr)
-                    else:
-                        old_min, old_max = self._parse_input(tokens)
-                        self._older_refs.append(old_max if old_max is not None else tr)
-            if later:
-                temp_refs = later if type(later) is list else [later]
-                for tr in temp_refs:
-                    # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
-                    tokens = tr.split()
-                    if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
-                        self._later_refs.append(tr)
-                    else:
-                        l8r_min, l8r_max = self._parse_input(tr.split())
-                        self._later_refs.append(l8r_min if l8r_min is not None else tr)
+            older_constraints, later_constraints = self._unpack_relative_constraints(older, later)
+
+        return older_constraints, later_constraints
+
+    def _unpack_absolute_constraints(self, absolute: str = '') -> Tuple[List, List]:
+        older_constraints = []
+        later_constraints = []
+        tokens = absolute.split()
+        if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+            # This must be a reference to another event.
+            tok = tokens[0]
+            offset_text = f"{absolute[len(tok):]}"  # Extract offset text if present.
+
+            justified = tok[0] == '^' or tok[-1] == '$'
+            if offset_text and not justified:
+                # If we have an offset, then we assume a justification to the nearest boundary unless specified.
+                # e.g. if we have a negative offset from another event, justify to the event's start.min.
+                tok = f"^{tok}" if '-' in offset_text else f"{tok}$"
+
+            if tok[0] == '^' or tok[-1] == '$':
+                # If the ref ID is justified, just keep as is and add to both lists.
+                older_constraints.append(f"{tok}{offset_text}")
+                later_constraints.append(f"{tok}{offset_text}")
+            else:
+                # If it is not justified, justify it into the relative event lists.
+                older_constraints.append(f"^{tokens[0]}{offset_text}")
+                later_constraints.append(f"{tokens[0]}${offset_text}")
+        else:
+            # Assume this represents a date string.
+            amin, amax = self._parse_input(tokens)
+            if amin:
+                older_constraints = [amin]
+            if amax:
+                later_constraints = [amax]
+
+        return older_constraints, later_constraints
+
+    def _unpack_relative_constraints(self, older: Union[str, List[str]] = '', later: Union[str, List[str]] = '') -> Tuple[List, List]:
+        older_constraints = []
+        later_constraints = []
+        # Make sure any prior/later events are held in local lists.
+        if older:
+            temp_refs = older if type(older) is list else [older]
+            for tr in temp_refs:
+                # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
+                tokens = tr.split()
+                if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                    older_constraints.append(tr)
+                else:
+                    old_min, old_max = self._parse_input(tokens)
+                    older_constraints.append(old_max if old_max is not None else tr)
+        if later:
+            temp_refs = later if type(later) is list else [later]
+            for tr in temp_refs:
+                # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
+                tokens = tr.split()
+                if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                    later_constraints.append(tr)
+                else:
+                    l8r_min, l8r_max = self._parse_input(tr.split())
+                    later_constraints.append(l8r_min if l8r_min is not None else tr)
+
+        return older_constraints, later_constraints
 
     @staticmethod
     def _parse_input(tokens: List[str]) -> Tuple[TimePoint, TimePoint]:

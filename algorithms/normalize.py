@@ -88,6 +88,8 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              records=records,
                                              stack=stack,
                                              verbose=verbose)
+        if not date_found:
+            continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
         # We've set start min/max and end min/max. Now enforce internal consistency.
         # We can't define these relations in advance because that would create recursive dependencies.

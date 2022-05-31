@@ -4,6 +4,8 @@ from datetime import timedelta
 
 from data_types import Timeline, TimePoint, Timeview, EventRecord
 
+import algorithms
+
 
 class TestTimeview(unittest.TestCase):
 
@@ -15,7 +17,7 @@ class TestTimeview(unittest.TestCase):
                 {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'}
             ]
         self.timeline = Timeline()
-        self.timeline.load_from_record_list(self.record_list)
+        self.timeline.init_from_record_list(self.record_list)
 
     def test_buffer(self):
 
@@ -84,7 +86,7 @@ class TestTimeview(unittest.TestCase):
              },
             ]
         tl2 = Timeline()
-        tl2.load_from_record_list(more_records)
+        tl2.init_from_record_list(more_records)
         contains_true = [event.start for event in tl2.get_records().values() if event.name.startswith('in')]
         contains_false = [event.start for event in tl2.get_records().values() if event.name.startswith('out')]
 
@@ -95,7 +97,7 @@ class TestTimeview(unittest.TestCase):
         for tr in contains_true:
             self.assertTrue(view.contains(tr))
         for tr in contains_false:
-            self.assertFalse(view.contains(tr))
+            self.assertFalse(view.contains(tr), f"View claims to contain ({tr.min}, {tr.max}) when it doesn't")
 
         early_date = TimePoint(year=1970, month=8, day=16)
         late_date = TimePoint(year=2040, month=6, day=6)
@@ -123,10 +125,11 @@ class TestTimeview(unittest.TestCase):
         view = Timeview(self.timeline)  # Create Timeview from 17 Aug 1970 to 5 Jun 2040.
         rec_bef = {'name': 'before', 'id': 'before', 'start': '10 Mar 1970', 'end': '11 Mar 1970'}
         rec_aft = {'name': 'after', 'id': 'after', 'start': '10 Mar 2050', 'end': '11 Mar 2050'}
-        recs = [EventRecord(rec_data) for rec_data in [rec_bef, rec_aft]]
+        recs = {rec_data['id']: EventRecord(rec_data) for rec_data in [rec_bef, rec_aft]}
+        recs = algorithms.normalize_events(recs)
 
         # Assert
-        for rr in recs:
+        for r_id, rr in recs.items():
             self.assertFalse(view.contains(rr), f"View does not contain {rr} ({rr.start.min}, {rr.end.max}) but claims to.")
 
     def test_zoom_in_min(self):

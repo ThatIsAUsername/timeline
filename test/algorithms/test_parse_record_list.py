@@ -33,8 +33,51 @@ class TestConvert(unittest.TestCase):
         records = parse_record_list(record_list)
 
         # Assert
-        print('records:', records)
         self.assertEqual(len(records), len(record_list))
         self.assertIn('nd', records)
         self.assertIn('nd2', records)
         self.assertIn('nd3', records)
+
+    def test_duplicate_ids(self):
+
+        # Arrange - these two records should be merged
+        record_list = [{'name': 'Name Duplicate', 'id': 'nd', 'end': '1000'},
+                       {'name': 'Name Duplicate', 'id': 'nd', 'start': '0'},
+                       ]
+
+        # Act
+        records = parse_record_list(record_list)
+
+        # Assert
+        self.assertEqual(len(records), 1)
+        self.assertIn('nd', records)
+
+    def test_duplicate_ids_implicit(self):
+
+        # Arrange - these two should not be merged since the id's don't match explicitly.
+        record_list = [{'name': 'Name Duplicate', 'id': 'nd'},
+                       {'name': 'Name Duplicate'},
+                       ]
+
+        # Act
+        records = parse_record_list(record_list)
+
+        # Assert
+        self.assertEqual(len(records), len(record_list))
+        self.assertIn('nd', records)
+        self.assertIn('nd2', records)
+
+    def test_duplicate_ids_implicit_reverse(self):
+
+        # Arrange - these two should not be merged since the id's don't match explicitly.
+        record_list = [{'name': 'Name Duplicate'},
+                       {'name': 'Name Duplicate', 'id': 'nd'},
+                       ]
+
+        # Act
+        records = parse_record_list(record_list)
+
+        # Assert
+        self.assertEqual(len(records), len(record_list))
+        self.assertIn('nd', records)
+        self.assertIn('nd2', records)

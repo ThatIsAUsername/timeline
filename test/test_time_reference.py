@@ -23,8 +23,12 @@ class TestTimeReference(unittest.TestCase):
         # Assert
         # Since we initialized the TimeReference with an absolute time,
         # the min and max possible reference values should be the same.
-        self.assertEqual(date_ans_ord, tr.min.ordinal())
-        self.assertEqual(date_ans_ord, tr.max.ordinal())
+        self.assertEqual(len(tr._older_refs), 1)
+        self.assertEqual(len(tr._later_refs), 1)
+        older = tr._older_refs[0]
+        later = tr._later_refs[0]
+        self.assertEqual(date_ans_ord, older.ordinal())
+        self.assertEqual(date_ans_ord, later.ordinal())
 
     def test_absolute_no_day(self):
 
@@ -41,8 +45,12 @@ class TestTimeReference(unittest.TestCase):
         tr = TimeReference(absolute=date_str)
 
         # Assert
-        self.assertEqual(ans_beg_ord, tr.min.ordinal())
-        self.assertEqual(ans_end_ord, tr.max.ordinal())
+        self.assertEqual(len(tr._older_refs), 1)
+        self.assertEqual(len(tr._later_refs), 1)
+        older = tr._older_refs[0]
+        later = tr._later_refs[0]
+        self.assertEqual(ans_beg_ord, older.ordinal())
+        self.assertEqual(ans_end_ord, later.ordinal())
 
     def test_absolute_no_month(self):
 
@@ -59,8 +67,12 @@ class TestTimeReference(unittest.TestCase):
         tr = TimeReference(absolute=date_str)
 
         # Assert
-        self.assertEqual(ans_beg_ord, tr.min.ordinal())
-        self.assertEqual(ans_end_ord, tr.max.ordinal())
+        self.assertEqual(len(tr._older_refs), 1)
+        self.assertEqual(len(tr._later_refs), 1)
+        older = tr._older_refs[0]
+        later = tr._later_refs[0]
+        self.assertEqual(ans_beg_ord, older.ordinal())
+        self.assertEqual(ans_end_ord, later.ordinal())
 
     def test_absolute_reference(self):
 

@@ -6,7 +6,7 @@ from data_types import Timeline, TimePoint
 
 class TestTimeline(unittest.TestCase):
 
-    def test_load_from_file(self):
+    def test_load_records(self):
 
         # Arrange
         tl = Timeline()
@@ -14,7 +14,7 @@ class TestTimeline(unittest.TestCase):
         max_ans = TimePoint(year=1975, month=6, day=29)
 
         # Act
-        tl.load_from_file("test/data/test_sample.yaml")
+        tl.load_records("test/data/test_sample.yaml")
 
         # Assert
         self.assertEqual(len(tl.get_records()), 10)
@@ -33,7 +33,7 @@ class TestTimeline(unittest.TestCase):
 
         # Act
         tl = Timeline()
-        tl.load_from_record_list(record_list)
+        tl.init_from_record_list(record_list)
 
         # Assert
         self.assertEqual(len(tl.get_records()), 3)

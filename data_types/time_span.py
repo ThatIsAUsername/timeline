@@ -42,3 +42,6 @@ class TimeSpan:
                 raise ValueError(f"Token {tok} doesn't specify a unit (must be d, m, or y)!")
 
         return TimeSpan(years=years, months=months, days=days)
+
+    def __eq__(self, other: 'TimeSpan'):
+        return self.years == other.years and self.months == other.months and self.days == other.days

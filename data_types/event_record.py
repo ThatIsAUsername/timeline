@@ -26,6 +26,34 @@ class EventRecord:
         self.duration = self._extract_duration(record_data)
         self.sources: List = record_data['sources'] if 'sources' in record_data else []
 
+    def merge(self, record_data: Dict):
+        """
+        Combine the data/constraints in `record_data` with what is already in this record.
+        Raise an error if the new record materially differs from the current data.
+
+        Args:
+            record_data: A dict generated from a record loaded from a yaml data file.
+        """
+        if self.id != record_data['id']:
+            raise ValueError(f"Attempted to merge record {record_data['id']} into record {self.id}!")
+
+        # Merge the new data into the existing raw record dict.
+        self._data.update(record_data)
+
+        # Update the TimeReferences with any new constraints.
+        start, start_after, start_before = self._extract_time_refs(record_data, start_refs=True)
+        end, end_after, end_before = self._extract_time_refs(record_data, start_refs=False)
+        self.start.merge(start, start_after, start_before)
+        self.end.merge(end, end_after, end_before)
+
+        new_duration = self._extract_duration(record_data)
+        if self.duration and new_duration and new_duration != self.duration:
+            raise ValueError(f"Record {self.id} with duration {self.duration} has conflicting new duration {new_duration}")
+        self.duration = new_duration  # Replace in case old duration is None and new is specified.
+
+        new_sources: List = record_data['sources'] if 'sources' in record_data else []
+        self.sources.extend(new_sources)
+
     @staticmethod
     def _extract_time_refs(record_data: Dict, start_refs: bool) -> Tuple:
         key = "start" if start_refs else "end"
