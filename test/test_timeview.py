@@ -2,7 +2,7 @@
 import unittest
 from datetime import timedelta
 
-from data_types import Timeline, TimePoint, Timeview, EventRecord
+from data_types import Timeline, TimePoint, Timeview, EventRecord, EventData
 
 import algorithms
 
@@ -16,8 +16,9 @@ class TestTimeview(unittest.TestCase):
                 {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
                 {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'}
             ]
+        self.event_datas = [EventData.parse(entry) for entry in self.record_list]
         self.timeline = Timeline()
-        self.timeline.init_from_record_list(self.record_list)
+        self.timeline.init_from_record_list(self.event_datas)
 
     def test_buffer(self):
 
@@ -86,7 +87,8 @@ class TestTimeview(unittest.TestCase):
              },
             ]
         tl2 = Timeline()
-        tl2.init_from_record_list(more_records)
+        event_datas = [EventData.parse(event) for event in more_records]
+        tl2.init_from_record_list(event_datas)
         contains_true = [event.start for event in tl2.get_records().values() if event.name.startswith('in')]
         contains_false = [event.start for event in tl2.get_records().values() if event.name.startswith('out')]
 
@@ -108,7 +110,7 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         wide_dat = {'name': 'bef_aft', 'id': 'bef_aft', 'start': '10 Mar 1970', 'end': '11 Mar 2050'}
-        wide_rec = EventRecord(wide_dat)
+        wide_rec = EventRecord(EventData.parse(wide_dat))
 
         view = Timeview(self.timeline)
         recs = list(self.timeline.get_records().values())
@@ -125,7 +127,9 @@ class TestTimeview(unittest.TestCase):
         view = Timeview(self.timeline)  # Create Timeview from 17 Aug 1970 to 5 Jun 2040.
         rec_bef = {'name': 'before', 'id': 'before', 'start': '10 Mar 1970', 'end': '11 Mar 1970'}
         rec_aft = {'name': 'after', 'id': 'after', 'start': '10 Mar 2050', 'end': '11 Mar 2050'}
-        recs = {rec_data['id']: EventRecord(rec_data) for rec_data in [rec_bef, rec_aft]}
+        dat_bef = EventData.parse(rec_bef)
+        dat_aft = EventData.parse(rec_aft)
+        recs = {rec_data.id: EventRecord(rec_data) for rec_data in [dat_bef, dat_aft]}
         recs = algorithms.normalize_events(recs)
 
         # Assert

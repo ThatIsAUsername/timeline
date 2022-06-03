@@ -18,7 +18,7 @@ class TestTimeReference(unittest.TestCase):
         date_ans_ord = date_ans.ordinal()
 
         # Act
-        tr = TimeReference(absolute=date_str)
+        tr = TimeReference(absolutes=[date_str])
 
         # Assert
         # Since we initialized the TimeReference with an absolute time,
@@ -42,7 +42,7 @@ class TestTimeReference(unittest.TestCase):
         ans_end_ord = ans_end.ordinal()
 
         # Act
-        tr = TimeReference(absolute=date_str)
+        tr = TimeReference(absolutes=[date_str])
 
         # Assert
         self.assertEqual(len(tr._older_refs), 1)
@@ -64,7 +64,7 @@ class TestTimeReference(unittest.TestCase):
         ans_end_ord = ans_end.ordinal()
 
         # Act
-        tr = TimeReference(absolute=date_str)
+        tr = TimeReference(absolutes=[date_str])
 
         # Assert
         self.assertEqual(len(tr._older_refs), 1)
@@ -84,7 +84,7 @@ class TestTimeReference(unittest.TestCase):
         ans_later = "other_event$"  # The other event must have ended after this TimeRef ended.
 
         # Act
-        tr = TimeReference(absolute=event_ref)
+        tr = TimeReference(absolutes=[event_ref])
 
         # Assert
         self.assertEqual(tr.min, None)  # Since we just provided a reference, the min/max is not yet known.
@@ -102,7 +102,7 @@ class TestTimeReference(unittest.TestCase):
         ans_later = "^other_event"  # This TimeRef must end when the other end begins as well.
 
         # Act
-        tr = TimeReference(absolute=event_ref)
+        tr = TimeReference(absolutes=[event_ref])
 
         # Assert
         self.assertIn(ans_older, tr._older_refs)
@@ -121,7 +121,7 @@ class TestTimeReference(unittest.TestCase):
         ans_end_ord = ans_end.ordinal()
 
         # Act
-        tr = TimeReference(older=older_str, later=later_str)
+        tr = TimeReference(older=[older_str], later=[later_str])
 
         # Assert
         # Ensure the dates were properly parsed into the older/newer ref lists.
@@ -139,7 +139,7 @@ class TestTimeReference(unittest.TestCase):
         later_str = "later_event"  # This one must be after
 
         # Act
-        tr = TimeReference(older=older_str, later=later_str)
+        tr = TimeReference(older=[older_str], later=[later_str])
 
         # Assert
         # Ensure the dates were properly parsed into the older/newer ref lists.

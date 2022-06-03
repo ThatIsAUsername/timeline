@@ -2,7 +2,7 @@ from typing import Dict, List, Union
 import yaml
 import math
 
-from data_types import EventRecord, TimePoint, IncoherentTimelineError
+from data_types import EventRecord, TimePoint, IncoherentTimelineError, EventData
 import algorithms
 
 
@@ -27,18 +27,19 @@ class Timeline:
 
         # Load all records from all provided files into one record list.
         # Any duplicates will be reconciled in a later step.
-        record_list = []
+        dict_list = []
         for filename in inputs:
             with open(filename) as file:
                 loaded = yaml.load(file, Loader=yaml.BaseLoader)
-                record_list.extend(loaded['Records'])
+                dict_list.extend(loaded['Records'])
 
+        record_list: List[EventData] = [EventData.parse(rr) for rr in dict_list]
         self.init_from_record_list(record_list)
 
-    def init_from_record_list(self, records: List[Dict]):
+    def init_from_record_list(self, record_datas: List[EventData]):
 
         # Parse the raw record data into a set of EventRecord objects, mapped by event ID.
-        self.records = algorithms.parse_record_list(records)
+        self.records = algorithms.parse_record_list(record_datas)
 
         # Process the events to make sure all bounds are well-defined.
         algorithms.normalize_events(self.records)

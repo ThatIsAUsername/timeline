@@ -15,7 +15,7 @@ class TimeSpan:
         self.days = -self.days
 
     @staticmethod
-    def parse(input_str: str):
+    def parse(input_str: str) -> 'TimeSpan':
         """
         Parse an EventDuration from a string.
         The string may be formatted with up to three whitespace-separated tokens to
