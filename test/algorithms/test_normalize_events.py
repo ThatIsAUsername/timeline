@@ -5,7 +5,7 @@ import math
 import yaml
 
 from algorithms import normalize_events, parse_record_list
-from data_types import EventRecord, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError
+from data_types import EventRecord, EventData, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError
 from calendar import month_abbr
 
 months = list(month_abbr)
@@ -24,7 +24,8 @@ class TestNormalizeEvents(unittest.TestCase):
         death_date = TimePoint(day=5, month=months.index('Jun'), year=2040)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -51,7 +52,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_ans = math.inf
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -73,7 +75,8 @@ class TestNormalizeEvents(unittest.TestCase):
         rec_end = math.inf
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -96,7 +99,8 @@ class TestNormalizeEvents(unittest.TestCase):
         rec_end = TimePoint(day=5, month=months.index('Jun'), year=2040)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -118,7 +122,8 @@ class TestNormalizeEvents(unittest.TestCase):
         record_list = [{'name': 'Broken', 'id': rec_id, 'start_after': '6 Jun 2040', 'end_before': '5 Jun 2040'}]
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         with self.assertRaises(InconsistentTimeReferenceError) as context:
             normalize_events(records)
 
@@ -136,7 +141,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2040, month=6, day=7)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -157,7 +163,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2040, month=6, day=7)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -177,7 +184,8 @@ class TestNormalizeEvents(unittest.TestCase):
         start_max_ans = end_ans  # Can't start after it ends
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -194,7 +202,8 @@ class TestNormalizeEvents(unittest.TestCase):
         record_list = [{'name': 'Broken Ref', 'id': rec_id, 'start_after': 'unknown_record'}]
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         with self.assertRaises(UnknownEventRecordError) as context:
             normalize_events(records)
 
@@ -213,7 +222,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_ans = TimePoint(year=2041, month=7, day=16)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -235,7 +245,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_ans = TimePoint(year=2041, month=7, day=16)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -261,7 +272,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2041, month=8, day=20)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -288,7 +300,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2041, month=8, day=20)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -315,7 +328,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2041, month=8, day=20)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -342,7 +356,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2041, month=8, day=20)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         with self.assertRaises(InconsistentTimeReferenceError) as context:
             normalize_events(records)
 
@@ -367,7 +382,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2042, month=8, day=17)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -396,7 +412,8 @@ class TestNormalizeEvents(unittest.TestCase):
         end_max_ans = TimePoint(year=2042, month=8, day=17)
 
         # Act
-        records: Dict[str, EventRecord] = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert
@@ -416,7 +433,8 @@ class TestNormalizeEvents(unittest.TestCase):
         record_list = loaded["Records"]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
         normalize_events(records)
 
         # Assert

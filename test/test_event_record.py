@@ -1,7 +1,7 @@
 
 import unittest
 
-from data_types import TimeReference, EventRecord
+from data_types import TimeReference, EventRecord, EventData
 
 
 class TestEventRecord(unittest.TestCase):
@@ -13,13 +13,14 @@ class TestEventRecord(unittest.TestCase):
                        'id': 'life',
                        'start_before': 'birth',
                        'end': 'death',
-                       'sources': ['source 1', 'source 2']}
+                       'info': ['source 1', 'source 2']}
 
         # Act
-        er = EventRecord(record_data)
+        evt_data = EventData.parse(record_data)
+        er = EventRecord(evt_data)
 
         # Assert
-        self.assertEqual(er._data, record_data)
+        self.assertEqual(er._data, evt_data)
         self.assertEqual(er.name, 'Life')
         self.assertEqual(er.id, 'life')
         self.assertEqual(type(er.start), TimeReference)
@@ -29,6 +30,6 @@ class TestEventRecord(unittest.TestCase):
         self.assertEqual(type(er.end), TimeReference)
         self.assertIn('^death', er.end._older_refs)
         self.assertIn('death$', er.end._later_refs)
-        self.assertEqual(type(er.sources), list)
-        self.assertIn('source 1', er.sources)
-        self.assertIn('source 2', er.sources)
+        self.assertEqual(type(er.info), list)
+        self.assertIn('source 1', er.info)
+        self.assertIn('source 2', er.info)

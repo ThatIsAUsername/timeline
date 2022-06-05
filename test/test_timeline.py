@@ -1,7 +1,7 @@
 
 import unittest
 
-from data_types import Timeline, TimePoint
+from data_types import Timeline, TimePoint, EventData
 
 
 class TestTimeline(unittest.TestCase):
@@ -33,7 +33,8 @@ class TestTimeline(unittest.TestCase):
 
         # Act
         tl = Timeline()
-        tl.init_from_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        tl.init_from_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(tl.get_records()), 3)

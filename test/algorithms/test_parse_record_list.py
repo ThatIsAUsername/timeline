@@ -1,5 +1,7 @@
 
+from typing import Dict
 import unittest
+from data_types import EventRecord, EventData
 from algorithms import parse_record_list
 
 
@@ -14,7 +16,8 @@ class TestConvert(unittest.TestCase):
                        ]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -30,7 +33,8 @@ class TestConvert(unittest.TestCase):
                        ]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -46,7 +50,8 @@ class TestConvert(unittest.TestCase):
                        ]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(records), 1)
@@ -60,7 +65,8 @@ class TestConvert(unittest.TestCase):
                        ]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -75,7 +81,8 @@ class TestConvert(unittest.TestCase):
                        ]
 
         # Act
-        records = parse_record_list(record_list)
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
 
         # Assert
         self.assertEqual(len(records), len(record_list))
