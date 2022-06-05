@@ -11,6 +11,7 @@ import color
 from datetime import timedelta
 import data_types
 from algorithms import interpolate
+from logs import get_logger
 
 TimePoint = data_types.TimePoint
 
@@ -160,11 +161,13 @@ class Timeview:
         try:
             self.min = self.min - hi_shift
         except (ValueError, OverflowError) as oe:
-            print(f"Warning! Attempting to view past the beginning of time! Details:\n  {str(oe)}")
+            log = get_logger()
+            log.warning(f"Attempting to view past the beginning of time! Details:\n  {str(oe)}")
         try:
             self.max = self.max + lo_shift
         except (ValueError, OverflowError) as oe:
-            print(f"Warning! Attempting to view past the end of time! Details:\n  {str(oe)}")
+            log = get_logger()
+            log.warning(f"Attempting to view past the end of time! Details:\n  {str(oe)}")
 
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
@@ -182,12 +185,14 @@ class Timeview:
         try:
             self.min = self.min + delta
         except OverflowError as oe:
-            print("Warning! Attempting to pan view past the beginning of time!")
+            log = get_logger()
+            log.warning(f"Attempting to pan view past the beginning of time!")
 
         try:
             self.max = self.max + delta
         except OverflowError as oe:
-            print("Warning! Attempting to pan view past the end of time!")
+            log = get_logger()
+            log.warning(f"Attempting to pan view past the end of time!")
 
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())

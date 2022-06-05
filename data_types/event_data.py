@@ -1,5 +1,7 @@
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Union
 from dataclasses import dataclass
+
+from logs import get_logger
 
 
 @dataclass
@@ -59,7 +61,8 @@ class EventData:
             a conflict, this will be discovered when the event boundaries are reconciled.
         """
         if self.name != other.name:
-            print(f"WARNING! Event {self.name} is merging with a differently-named event {other.name}")
+            log = get_logger()
+            log.warning(f"Event {self.name} is merging with a differently-named event {other.name}")
         if self.id != other.id:
             raise ValueError(f"Trying to merge event data for {other.id} into data for {self.id}!")
         if self.duration and other.duration and self.duration != other.duration:

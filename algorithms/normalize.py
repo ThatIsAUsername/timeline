@@ -5,9 +5,10 @@ from typing import Dict, List
 from collections import deque
 
 from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, TimeSpan
+from logs import get_logger
 
 
-def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> Dict[str, EventRecord]:
+def normalize_events(records: Dict[str, EventRecord]) -> Dict[str, EventRecord]:
     """
     Populate the min and max field for the start and end TimeReference for each EventRecord, using
         the other TimeRecords to provide the needed context.
@@ -15,26 +16,25 @@ def normalize_events(records: Dict[str, EventRecord], verbose: bool = True) -> D
 
     Args:
         records: a Dict of EventRecord IDs to the record objects.
-        verbose: If true, log detailed information about the process.
 
     Returns:
         The record list after all dates have been made concrete to the extent possible.
     """
+    algo_logger = get_logger()
     resolved = []
     for rec_id in records:
         if rec_id in resolved:
             # If this record was already done on a previous pass (because another record
             # refers to it) then don't bother trying to reprocess it.
             continue
-        if verbose:
-            print(f"[normalize_event_list] Normalizing `{rec_id}`")
-        dones = normalize_event(rec_id=rec_id, records=records, verbose=verbose)
+        algo_logger.debug(f"Normalizing `{rec_id}`")
+        dones = normalize_event(rec_id=rec_id, records=records)
         resolved.extend(dones)
 
     return records
 
 
-def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool = True) -> List[str]:
+def normalize_event(rec_id: str, records: Dict[str, EventRecord]) -> List[str]:
     """
     Determine fixed dates for all TimeReference boundaries for event rec_id.
     This may require recursively resolving bounds for any other events this one references.
@@ -42,25 +42,23 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
     Args:
         rec_id: ID of the EventRecord to resolve.
         records: Dict of all EventRecords for reference.
-        verbose: Whether to print progress.
 
     Returns:
         A list of all recursively-resolved events so we can avoid extra calls?
     """
+    algo_logger = get_logger()
     stack = deque()
     stack.append(rec_id)
     resolved = []
     while len(stack) > 0:
         cid = stack.pop()
-        if verbose:
-            print(f"[normalize_event] checking bounds for `{cid}`")
+        algo_logger.debug(f"Checking bounds for `{cid}`")
 
         date_found = bind_reference_boundary(cid=cid,
                                              bind_start=True,
                                              bind_min=True,
                                              records=records,
-                                             stack=stack,
-                                             verbose=verbose)
+                                             stack=stack)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -68,8 +66,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              bind_start=True,
                                              bind_min=False,
                                              records=records,
-                                             stack=stack,
-                                             verbose=verbose)
+                                             stack=stack)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -77,8 +74,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              bind_start=False,
                                              bind_min=True,
                                              records=records,
-                                             stack=stack,
-                                             verbose=verbose)
+                                             stack=stack)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -86,8 +82,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
                                              bind_start=False,
                                              bind_min=False,
                                              records=records,
-                                             stack=stack,
-                                             verbose=verbose)
+                                             stack=stack)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -99,8 +94,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
         if type(cur.start.max) is float or\
                 (type(cur.start.max) is TimePoint and type(cur.end.max) is TimePoint and cur.start.max > cur.end.max):
             cur.start.max = cur.end.max  # Can't start later than the latest possible end time (could still be inf).
-            if verbose:
-                print(f"[normalize_event] Setting `{cid}` start.max to respect `{cid}` end.max ({cur.start.max}).")
+            algo_logger.debug(f"Setting `{cid}` start.max to respect `{cid}` end.max ({cur.start.max}).")
 
         if type(cur.start.min) is TimePoint and type(cur.start.max) is TimePoint and cur.start.min > cur.start.max:
             raise InconsistentTimeReferenceError(f"start.min of `{cid}` ({cur.start.min}) is after start.max ({cur.start.max}).")
@@ -109,8 +103,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
         if not cur.end.has_min() or \
                 (cur.end.has_min() and cur.start.has_min() and cur.end.min < cur.start.min):
             cur.end.min = cur.start.min  # End can't be before the earliest possible start time (could still be -inf).
-            if verbose:
-                print(f"[normalize_event] Setting `{cid}` end.min to respect `{cid}` start.min ({cur.end.min}).")
+            algo_logger.debug(f"Setting `{cid}` end.min to respect `{cid}` start.min ({cur.end.min}).")
 
         # We can't handle duration in bind_reference_boundary because it is a self-referential dependency. Do it here.
         if cur.duration:
@@ -121,8 +114,7 @@ def normalize_event(rec_id: str, records: Dict[str, EventRecord], verbose: bool 
 
         # This record is now done; we don't have to redo it on a future pass.
         resolved.append(cid)
-        if verbose:
-            print(f"[normalize_event] Finished normalizing `{cid}`")
+        algo_logger.debug(f"Finished normalizing `{cid}`")
 
     return resolved
 
@@ -150,7 +142,7 @@ def bind_reference_boundary(cid: str,
             this one (in which case we will put cid and the relevant other record ID into `stack`) or it could mean
             it is impossible to determine with the information we have (in which case `stack` will not be modified).
     """
-
+    algo_logger = get_logger()
     rec = records[cid]
     cref: TimeReference = rec.start if bind_start else rec.end
     boundary: TimePoint = cref.min if bind_min else cref.max
@@ -160,8 +152,7 @@ def bind_reference_boundary(cid: str,
     # Description of what we are binding for printouts.
     desc = f"{cid}.{'start' if bind_start else 'end'}.{'min' if bind_min else 'max'}"
 
-    if verbose:
-        print(f"[bind_reference_boundary] Binding {desc} to a concrete date.")
+    algo_logger.debug(f"Binding {desc} to a concrete date.")
 
     # Rough outline of what this does, e.g. when finding start.min:
     # Retrieve start reference's 'older' constraints
@@ -177,8 +168,7 @@ def bind_reference_boundary(cid: str,
     constraints = cref._older_refs if bind_min else cref._later_refs
     resolved_constraints = []
     for constraint in constraints:
-        if verbose:
-            print(f"[bind_reference_boundary]   processing constraint '{constraint}'")
+        algo_logger.debug(f"Processing constraint '{constraint}'")
         if type(constraint) is TimePoint:
             resolved_constraints.append(constraint)
         elif type(constraint) is str:
@@ -220,42 +210,37 @@ def bind_reference_boundary(cid: str,
             if relevant_boundary is None:  # The other records dates are not yet known.
                 stack.append(cid)  # Put the current record ID back on the stack for now.
                 stack.append(constraint_id)  # Also push this constraining record onto the stack to figure out first.
-                if verbose:
-                    print(f"[bind_reference_boundary] Record '{cid}' references unprocessed record '{constraint_id}'. Delaying.")
+                algo_logger.debug(f"Record '{cid}' references unprocessed record '{constraint_id}'. Delaying.")
                 return False  # We don't have enough info yet. Hold off for now.
             else:  # The other record's relevant date is known; hold onto it.
                 # If there is an offset, add it to the relevant_boundary before storing. Not applicable for +/-inf.
                 if offset and type(relevant_boundary) is TimePoint:
+                    algo_logger.debug(f"Offsetting {relevant_boundary} by {offset}")
                     relevant_boundary = relevant_boundary + offset
                 resolved_constraints.append(relevant_boundary)  # This should either be a date or +/-inf.
-                if verbose:
-                    print(f"[bind_reference_boundary]   {desc} must be {'after' if bind_min else 'before'}"
-                          f" {relevant_boundary} ({constraint_desc} + {offset}).")
+                algo_logger.debug(f"{desc} must be {'after' if bind_min else 'before'}"
+                                  f" {relevant_boundary} ({constraint_desc} + {offset}).")
 
     # If we made it this far, then resolved_constraints should be a list of dates, and maybe some +/-infinities.
     bind_value = None
     if len(resolved_constraints) == 0:
         # Unconstrained boundaries are just set to the extremes.
         bind_value = -math.inf if bind_min else math.inf
-        if verbose:
-            print(f"[bind_reference_boundary] No constraints defined for {desc}. Setting to {bind_value}.")
+        algo_logger.debug(f"No constraints defined for {desc}. Setting to {bind_value}.")
     elif len(resolved_constraints) == 1:
         bind_value = resolved_constraints[0]
-        if verbose:
-            print(f"[bind_reference_boundary] Setting {desc} to {bind_value}")
+        algo_logger.debug(f"Setting {desc} to {bind_value}")
     else:
         # Constraints can be a date or +/-inf if the constraining ref was itself unconstrained.
         # Ignore non-dates if any dates exist.
         real_dates = [real for real in resolved_constraints if type(real) is TimePoint]
         if len(real_dates) == 0:
             bind_value = resolved_constraints[0]  # Only possibility here should be +/-math.inf.
-            if verbose:
-                print(f"[bind_reference_boundary] No real constraints found for {desc}. Setting to {bind_value}.")
+            algo_logger.debug(f"No real constraints found for {desc}. Setting to {bind_value}.")
         else:
             # Choose the best available constraint as our current bound.
             bind_value = max(real_dates) if bind_min else min(real_dates)
-            if verbose:
-                print(f"[bind_reference_boundary] {desc} set to {bind_value}")
+            algo_logger.debug(f"{desc} set to {bind_value}")
 
     # At this point, we should have properly defined bind_value as a date or as -math.inf.
     assert bind_value is not None, f"Failed to set {desc}!"
@@ -267,18 +252,27 @@ def bind_reference_boundary(cid: str,
 
 
 def bind_duration(cur: EventRecord):
+    algo_logger = get_logger()
     cid = cur.id
     dur: TimeSpan = cur.duration
 
     # If we know the start and not the end or vice versa, we can use one to bound the other.
     if cur.start.has_min() and not cur.end.has_min():
+        algo_logger.debug(f"Setting end.min to start.min+duration: {cur.end.min} + {dur}")
         cur.end.min = cur.start.min + dur
+        algo_logger.debug(f"New end.min: {cur.end.min}")
     if not cur.start.has_min() and cur.end.has_min():
+        algo_logger.debug(f"Setting start.min to end.min-duration: {cur.start.min} - {dur}")
         cur.start.min = cur.end.min - dur
+        algo_logger.debug(f"New start.min: {cur.start.min}")
     if cur.start.has_max() and not cur.end.has_max():
+        algo_logger.debug(f"Setting end.max to start.max+duration: {cur.end.max} + {dur}")
         cur.end.max = cur.start.max + dur
+        algo_logger.debug(f"New end.max: {cur.end.max}")
     if not cur.start.has_max() and cur.end.has_max():
+        algo_logger.debug(f"Setting start.max to end.max-duration: {cur.end.max} - {dur}")
         cur.start.max = cur.end.max - dur
+        algo_logger.debug(f"New start.max: {cur.start.max}")
 
     # For a given event record which starts between S1 and S2, ends between E1 and E2, and has duration D:
     # Then these constraints must hold: A1 + D = E1, and A2 + D = E2
@@ -300,15 +294,19 @@ def bind_duration(cur: EventRecord):
         a1_d = a1 + dur
         if a1_d < e1:
             a1 = e1 - dur
+            algo_logger.debug(f"Shifting start.min right to {a1}")
         elif a1_d > e1:
             e1 = a1_d
+            algo_logger.debug(f"Shifting end.min right to {e1}")
 
     if a2 and e2:
         a2_d = a2 + dur
         if a2_d > e2:
             a2 = e2 - dur
+            algo_logger.debug(f"Shifting start.max right to {a2}")
         elif a2_d < e2:
             e2 = a2_d
+            algo_logger.debug(f"Shifting end.max left to {e1}")
 
     # Ensure durations are internally consistent.
     if a1 and e2 and a1 + dur > e2:

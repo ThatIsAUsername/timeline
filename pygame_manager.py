@@ -2,6 +2,8 @@
 import pygame
 from pygame.locals import *
 
+from logs import get_logger
+
 
 class PyGameManager:
     fonts = {}
@@ -26,7 +28,8 @@ class PyGameManager:
     @staticmethod
     def get_font(size: int = 12):
         if size not in PyGameManager.fonts:
-            print('Creating font')
+            logger = get_logger()
+            logger.debug(f'Creating font size {size}')
             font = pygame.font.Font('freesansbold.ttf', size)
             PyGameManager.fonts[size] = font
         return PyGameManager.fonts[size]

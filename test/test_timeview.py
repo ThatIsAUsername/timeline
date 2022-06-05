@@ -117,7 +117,6 @@ class TestTimeview(unittest.TestCase):
         recs.append(wide_rec)
 
         # Assert
-        print('view range', view.min, view.max)
         for rr in recs:
             self.assertTrue(view.contains(rr), f"View contains {rr} ({rr.start.min}, {rr.end.max}) but claims not to.")
 
