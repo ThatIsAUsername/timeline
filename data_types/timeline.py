@@ -3,6 +3,7 @@ import yaml
 import math
 
 from data_types import EventRecord, TimePoint, IncoherentTimelineError, EventData
+from logs import get_logger
 import algorithms
 
 
@@ -36,7 +37,7 @@ class Timeline:
         event_datas: List[EventData] = [EventData.parse(rr) for rr in dict_list]
         self.init_from_event_data(event_datas)
 
-    def init_from_event_data(self, event_datas: List[EventData]):
+    def init_from_event_data(self, event_datas: List[EventData], *, recursing=False):
 
         # Generate EventRecords with consistent boundaries based on the data we read in.
         self.records: Dict[str, EventRecord] = algorithms.build_record_list(event_datas)
@@ -57,7 +58,13 @@ class Timeline:
                 if self.max == math.inf or bound > self.max:
                     self.max = bound
 
-        if type(self.min) is not TimePoint:  # min and max be the same, but if one is real the other should be also.
+        if not recursing and type(self.min) is not TimePoint:
+            # If we weren't able to anchor anything so far, then nail down the first event to start at 0 and retry.
+            logger = get_logger()
+            logger.warn(f"Unable to resolve any well-defined dates on first pass. Fixing '{event_datas[0].name}' to start at 1 Jan 0")
+            event_datas[0].start.append('1 Jan 0')
+            self.init_from_event_data(event_datas, recursing=True)
+        if type(self.min) is not TimePoint:
             raise IncoherentTimelineError("[timeline.load] Failed to find any well-defined dates")
 
     def get_records(self) -> Dict[str, EventRecord]:
