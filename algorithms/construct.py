@@ -4,23 +4,27 @@ import math
 from typing import Dict, List
 from collections import deque
 
-from data_types import EventRecord, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, TimeSpan
+from data_types import EventRecord, EventData, TimeReference, TimePoint, InconsistentTimeReferenceError, UnknownEventRecordError, TimeSpan
 from logs import get_logger
 
 
-def normalize_events(records: Dict[str, EventRecord]) -> Dict[str, EventRecord]:
+def construct_records(event_datas: List[EventData]) -> Dict[str, EventRecord]:
     """
+    Convert all the EventData objects into EventRecords with resolved boundaries.
     Populate the min and max field for the start and end TimeReference for each EventRecord, using
-        the other TimeRecords to provide the needed context.
-    The passed-in record-list entries are modified in place, and the collection is returned as well.
+        the other events to provide the needed context.
 
     Args:
-        records: a Dict of EventRecord IDs to the record objects.
+        event_datas: A List of preprocessed EventData objects
 
     Returns:
         The record list after all dates have been made concrete to the extent possible.
     """
     algo_logger = get_logger()
+
+    # Construct EventRecords from the EventData objects, then reconcile their start/end bounds.
+    records: Dict[str, EventRecord] = {evt_dat.id: EventRecord(evt_dat) for evt_dat in event_datas}
+
     resolved = []
     for rec_id in records:
         if rec_id in resolved:
@@ -28,13 +32,13 @@ def normalize_events(records: Dict[str, EventRecord]) -> Dict[str, EventRecord]:
             # refers to it) then don't bother trying to reprocess it.
             continue
         algo_logger.debug(f"Normalizing `{rec_id}`")
-        dones = normalize_event(rec_id=rec_id, records=records)
+        dones = reconcile_record_bounds(rec_id=rec_id, records=records)
         resolved.extend(dones)
 
     return records
 
 
-def normalize_event(rec_id: str, records: Dict[str, EventRecord]) -> List[str]:
+def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> List[str]:
     """
     Determine fixed dates for all TimeReference boundaries for event rec_id.
     This may require recursively resolving bounds for any other events this one references.

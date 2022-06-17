@@ -18,7 +18,7 @@ class TestTimeview(unittest.TestCase):
             ]
         self.event_datas = [EventData.parse(entry) for entry in self.record_list]
         self.timeline = Timeline()
-        self.timeline.init_from_record_list(self.event_datas)
+        self.timeline.init_from_event_data(self.event_datas)
 
     def test_buffer(self):
 
@@ -88,7 +88,7 @@ class TestTimeview(unittest.TestCase):
             ]
         tl2 = Timeline()
         event_datas = [EventData.parse(event) for event in more_records]
-        tl2.init_from_record_list(event_datas)
+        tl2.init_from_event_data(event_datas)
         contains_true = [event.start for event in tl2.get_records().values() if event.name.startswith('in')]
         contains_false = [event.start for event in tl2.get_records().values() if event.name.startswith('out')]
 
@@ -128,8 +128,7 @@ class TestTimeview(unittest.TestCase):
         rec_aft = {'name': 'after', 'id': 'after', 'start': '10 Mar 2050', 'end': '11 Mar 2050'}
         dat_bef = EventData.parse(rec_bef)
         dat_aft = EventData.parse(rec_aft)
-        recs = {rec_data.id: EventRecord(rec_data) for rec_data in [dat_bef, dat_aft]}
-        recs = algorithms.normalize_events(recs)
+        recs = algorithms.construct_records([dat_bef, dat_aft])
 
         # Assert
         for r_id, rr in recs.items():

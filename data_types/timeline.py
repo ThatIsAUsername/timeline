@@ -33,16 +33,13 @@ class Timeline:
                 loaded = yaml.load(file, Loader=yaml.BaseLoader)
                 dict_list.extend(loaded['Records'])
 
-        record_list: List[EventData] = [EventData.parse(rr) for rr in dict_list]
-        self.init_from_record_list(record_list)
+        event_datas: List[EventData] = [EventData.parse(rr) for rr in dict_list]
+        self.init_from_event_data(event_datas)
 
-    def init_from_record_list(self, record_datas: List[EventData]):
+    def init_from_event_data(self, event_datas: List[EventData]):
 
-        # Parse the raw record data into a set of EventRecord objects, mapped by event ID.
-        self.records = algorithms.parse_record_list(record_datas)
-
-        # Process the events to make sure all bounds are well-defined.
-        algorithms.normalize_events(self.records)
+        # Generate EventRecords with consistent boundaries based on the data we read in.
+        self.records: Dict[str, EventRecord] = algorithms.build_record_list(event_datas)
 
         # Determine the entire relevant time span, from the earliest start.min to the latest end.max.
         for rec in self.records.values():

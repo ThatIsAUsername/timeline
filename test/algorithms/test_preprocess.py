@@ -1,13 +1,13 @@
 
-from typing import Dict
+from typing import List, Dict
 import unittest
 from data_types import EventRecord, EventData
-from algorithms import parse_record_list
+from algorithms import preprocess_event_data
 
 
-class TestConvert(unittest.TestCase):
+class TestAssignIds(unittest.TestCase):
 
-    def test_parse_record_list(self):
+    def test_basic(self):
 
         # Arrange
         record_list = [{'name': 'Life', 'id': 'life', 'start_before': 'birth', 'end': 'death'},
@@ -17,12 +17,13 @@ class TestConvert(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
+        records: List[EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = [r.id for r in records]
 
         # Assert
         self.assertEqual(len(records), len(record_list))
         for entry in record_list:
-            self.assertIn(entry['id'], records)
+            self.assertIn(entry['id'], rec_ids)
 
     def test_generate_ids(self):
 
@@ -34,13 +35,14 @@ class TestConvert(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
+        records: List[EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = [r.id for r in records]
 
         # Assert
         self.assertEqual(len(records), len(record_list))
-        self.assertIn('nd', records)
-        self.assertIn('nd2', records)
-        self.assertIn('nd3', records)
+        self.assertIn('nd', rec_ids)
+        self.assertIn('nd2', rec_ids)
+        self.assertIn('nd3', rec_ids)
 
     def test_duplicate_ids(self):
 
@@ -51,11 +53,12 @@ class TestConvert(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
+        records: List[EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = [r.id for r in records]
 
         # Assert
         self.assertEqual(len(records), 1)
-        self.assertIn('nd', records)
+        self.assertIn('nd', rec_ids)
 
     def test_duplicate_ids_implicit(self):
 
@@ -66,12 +69,13 @@ class TestConvert(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
+        records: List[EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = [r.id for r in records]
 
         # Assert
         self.assertEqual(len(records), len(record_list))
-        self.assertIn('nd', records)
-        self.assertIn('nd2', records)
+        self.assertIn('nd', rec_ids)
+        self.assertIn('nd2', rec_ids)
 
     def test_duplicate_ids_implicit_reverse(self):
 
@@ -82,9 +86,10 @@ class TestConvert(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: Dict[str, EventRecord] = parse_record_list(evt_datas)
+        records: List[EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = [r.id for r in records]
 
         # Assert
         self.assertEqual(len(records), len(record_list))
-        self.assertIn('nd', records)
-        self.assertIn('nd2', records)
+        self.assertIn('nd', rec_ids)
+        self.assertIn('nd2', rec_ids)
