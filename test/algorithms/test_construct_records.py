@@ -407,6 +407,32 @@ class TestNormalizeEvents(unittest.TestCase):
         self.assertEqual(rec.end.min, end_min_ans)
         self.assertEqual(rec.end.max, end_max_ans)
 
+    def test_circular_dependency(self):
+        # Arrange
+        record_list = [{'name': 'First.',
+                        'id': 'first',
+                        'start_after': '0 Jan 1',
+                        'start_before': 'third'},
+                       {'name': 'Second',
+                        'id': 'second',
+                        'start_after': 'first',
+                        'end_before': 'third'},
+                       {'name': 'Third',
+                        'id': 'third',
+                        'start': '10 Jan 1',
+                        'start_after': ['^first', '^second']}
+                       ]
+
+        # Act
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        with self.assertRaises(InconsistentTimeReferenceError) as context:
+            records: Dict[str, EventRecord] = build_record_list(evt_datas)
+
+        # Assert
+        self.assertIn('first', str(context.exception))
+        self.assertIn('second', str(context.exception))
+        self.assertIn('third', str(context.exception))
+
     def test_sample_file(self):
 
         # Arrange

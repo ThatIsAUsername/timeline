@@ -128,7 +128,8 @@ class TestTimeview(unittest.TestCase):
         rec_aft = {'name': 'after', 'id': 'after', 'start': '10 Mar 2050', 'end': '11 Mar 2050'}
         dat_bef = EventData.parse(rec_bef)
         dat_aft = EventData.parse(rec_aft)
-        recs = algorithms.construct_records([dat_bef, dat_aft])
+        dat_dict = {dat.id: dat for dat in [dat_bef, dat_aft]}
+        recs = algorithms.construct_records(dat_dict)
 
         # Assert
         for r_id, rr in recs.items():

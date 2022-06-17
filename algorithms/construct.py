@@ -8,7 +8,7 @@ from data_types import EventRecord, EventData, TimeReference, TimePoint, Inconsi
 from logs import get_logger
 
 
-def construct_records(event_datas: List[EventData]) -> Dict[str, EventRecord]:
+def construct_records(event_datas: Dict[str, EventData]) -> Dict[str, EventRecord]:
     """
     Convert all the EventData objects into EventRecords with resolved boundaries.
     Populate the min and max field for the start and end TimeReference for each EventRecord, using
@@ -23,7 +23,7 @@ def construct_records(event_datas: List[EventData]) -> Dict[str, EventRecord]:
     algo_logger = get_logger()
 
     # Construct EventRecords from the EventData objects, then reconcile their start/end bounds.
-    records: Dict[str, EventRecord] = {evt_dat.id: EventRecord(evt_dat) for evt_dat in event_datas}
+    records: Dict[str, EventRecord] = {evt_id: EventRecord(evt_dat) for evt_id, evt_dat in event_datas.items()}
 
     resolved = []
     for rec_id in records:
@@ -54,7 +54,9 @@ def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> Lis
     stack = deque()
     stack.append(rec_id)
     resolved = []
+    unresolved_bounds = []
     while len(stack) > 0:
+        algo_logger.debug(f"Unresolved: {unresolved_bounds}")
         cid = stack.pop()
         algo_logger.debug(f"Checking bounds for `{cid}`")
 
@@ -62,7 +64,8 @@ def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> Lis
                                              bind_start=True,
                                              bind_min=True,
                                              records=records,
-                                             stack=stack)
+                                             stack=stack,
+                                             unresolved_bounds=unresolved_bounds)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -70,7 +73,8 @@ def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> Lis
                                              bind_start=True,
                                              bind_min=False,
                                              records=records,
-                                             stack=stack)
+                                             stack=stack,
+                                             unresolved_bounds=unresolved_bounds)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -78,7 +82,8 @@ def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> Lis
                                              bind_start=False,
                                              bind_min=True,
                                              records=records,
-                                             stack=stack)
+                                             stack=stack,
+                                             unresolved_bounds=unresolved_bounds)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -86,7 +91,8 @@ def reconcile_record_bounds(rec_id: str, records: Dict[str, EventRecord]) -> Lis
                                              bind_start=False,
                                              bind_min=False,
                                              records=records,
-                                             stack=stack)
+                                             stack=stack,
+                                             unresolved_bounds=unresolved_bounds)
         if not date_found:
             continue  # We didn't have enough info to pin this down, but stack should be updated. Loop again.
 
@@ -128,7 +134,7 @@ def bind_reference_boundary(cid: str,
                             bind_min: bool,  # True to find min bound, False to find max.
                             records: Dict[str, EventRecord],
                             stack: deque,
-                            verbose: bool = True) -> bool:
+                            unresolved_bounds: List[str]) -> bool:
     """
     Do all the work necessary to bind a firm date to one boundary of a TimeReference in an EventRecord.
     Args:
@@ -138,7 +144,7 @@ def bind_reference_boundary(cid: str,
         records: A Dict of records, as received from parse_record_list.
         stack: A stack used for bookkeeping. If we can't resolve cid due to a dependence on some other record oid,
                 then we push cid back into the stack, along with oid for further processing.
-        verbose: If True, print out information about the process as we go.
+        unresolved_bounds: A list of boundaries that have been delayed due to unresolved dependencies.
 
     Returns:
         Whether we were able to determine the given bound.
@@ -214,7 +220,14 @@ def bind_reference_boundary(cid: str,
             if relevant_boundary is None:  # The other records dates are not yet known.
                 stack.append(cid)  # Put the current record ID back on the stack for now.
                 stack.append(constraint_id)  # Also push this constraining record onto the stack to figure out first.
-                algo_logger.debug(f"Record '{cid}' references unprocessed record '{constraint_id}'. Delaying.")
+                algo_logger.debug(f"Record '{cid}' references unprocessed boundary '{constraint_desc}'. Delaying.")
+                if desc in unresolved_bounds:
+                    msg = "Failed to resolve timeline due to constraint loop: "
+                    for b in range(0, len(unresolved_bounds)):
+                        msg += f"{unresolved_bounds[b]} -> "
+                    msg += desc
+                    raise InconsistentTimeReferenceError(msg)
+                unresolved_bounds.append(desc)
                 return False  # We don't have enough info yet. Hold off for now.
             else:  # The other record's relevant date is known; hold onto it.
                 # If there is an offset, add it to the relevant_boundary before storing. Not applicable for +/-inf.
@@ -252,6 +265,8 @@ def bind_reference_boundary(cid: str,
         cref.min = bind_value
     else:
         cref.max = bind_value
+
+    unresolved_bounds.clear()  # Whenever we find something, forget assumptions about blockers.
     return True
 
 

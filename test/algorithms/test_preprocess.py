@@ -17,8 +17,8 @@ class TestAssignIds(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: List[EventData] = preprocess_event_data(evt_datas)
-        rec_ids: List[str] = [r.id for r in records]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -35,8 +35,8 @@ class TestAssignIds(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: List[EventData] = preprocess_event_data(evt_datas)
-        rec_ids: List[str] = [r.id for r in records]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -53,8 +53,25 @@ class TestAssignIds(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: List[EventData] = preprocess_event_data(evt_datas)
-        rec_ids: List[str] = [r.id for r in records]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
+
+        # Assert
+        self.assertEqual(len(records), 1)
+        self.assertIn('nd', rec_ids)
+
+    def test_duplicate_ids_multipass(self):
+
+        # Arrange - these two records should be merged, but have insufficient data
+        # to fix on the timeline. Make sure we handle this case correctly on the second pass too.
+        record_list = [{'name': 'Name Duplicate', 'id': 'nd'},
+                       {'name': 'Name Duplicate', 'id': 'nd'},
+                       ]
+
+        # Act
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
 
         # Assert
         self.assertEqual(len(records), 1)
@@ -69,8 +86,8 @@ class TestAssignIds(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: List[EventData] = preprocess_event_data(evt_datas)
-        rec_ids: List[str] = [r.id for r in records]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
 
         # Assert
         self.assertEqual(len(records), len(record_list))
@@ -86,8 +103,8 @@ class TestAssignIds(unittest.TestCase):
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
-        records: List[EventData] = preprocess_event_data(evt_datas)
-        rec_ids: List[str] = [r.id for r in records]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
 
         # Assert
         self.assertEqual(len(records), len(record_list))

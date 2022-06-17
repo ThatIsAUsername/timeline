@@ -20,7 +20,6 @@ class TimeReference:
                             If not modified, the beginning and end of this event will match those of the other event.
                         If a date string, the day and month are optional, but month is required if day is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
-                        NOTE: If `absolute` is provided, then `before` and `after` are ignored.
             older: Either another event's ID or a string representation of a date, formatted as 'DD MMM YYYY'
                         If an ID, it may be modified to denote the start (^id) or end (id$) of the other event, and
                         may also specify a math-based offset, e.g. "otherevent + 1y 2m 3d'
@@ -38,12 +37,10 @@ class TimeReference:
         self._older_refs, self._later_refs = self._unpack_constraints(absolutes, older, later)
 
     def _unpack_constraints(self, absolutes: List[str] = None, older: List[str] = None, later: List[str] = None) -> Tuple[List, List]:
-        # If absolute and self.absolute, make sure they match.
-        if absolutes:
-            older_constraints, later_constraints = self._unpack_absolute_constraints(absolutes)
-        # Otherwise, unpack constraints
-        else:
-            older_constraints, later_constraints = self._unpack_relative_constraints(older, later)
+        aoc, alc = self._unpack_absolute_constraints(absolutes)
+        roc, rlc = self._unpack_relative_constraints(older, later)
+        older_constraints = aoc + roc
+        later_constraints = alc + rlc
 
         return older_constraints, later_constraints
 

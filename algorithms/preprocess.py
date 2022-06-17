@@ -2,9 +2,10 @@
 from typing import Dict, List
 from data_types import EventRecord, EventData
 from .construct import construct_records
+from logs import get_logger
 
 
-def preprocess_event_data(data_list: List[EventData]) -> List[EventData]:
+def preprocess_event_data(data_list: List[EventData]) -> Dict[str, EventData]:
     """
     Auto-generate an event ID for any entry that lacks one.
     If multiple events are given the same explicit id, merge them together.
@@ -13,7 +14,7 @@ def preprocess_event_data(data_list: List[EventData]) -> List[EventData]:
         data_list: A list of EventData objects.
 
     Returns:
-        The final list of preprocessed EventData objects.
+        The final list of preprocessed EventData objects, mapped by id.
     """
     # Put all records with explicit IDs at the start of the list.
     # This will ensure that auto-generated IDs don't interfere.
@@ -22,6 +23,7 @@ def preprocess_event_data(data_list: List[EventData]) -> List[EventData]:
     ordered_list = records_with_ids + records_without_ids
 
     # Loop through all EventData objects and ensure they all have an id, merging duplicates.
+    _logger = get_logger()
     processed_records = {}
     for rr in ordered_list:
         # If the record has no 'id' specified, generate one.
@@ -42,15 +44,18 @@ def preprocess_event_data(data_list: List[EventData]) -> List[EventData]:
             # exists, then merge the two event records.
             rec_id = rr.id
             if rec_id in processed_records:
+                _logger.debug(f"Found a record with repeat id '{rec_id}'. Merging")
                 processed_records[rec_id].merge(rr)
-                rr.id = None  # Remove the duplicate's id so we can prune it.
 
         processed_records[rr.id] = rr
 
     # Filter the processed records into a final list to prune
     # duplicates and maintain the initial ordering.
-    final_list = [dat for dat in data_list if dat.id]
-    return final_list
+    final_dict = {}
+    for dat in data_list:
+        if dat.id not in final_dict:
+            final_dict[dat.id] = dat
+    return final_dict
 
 
 def build_record_list(data_list: List[EventData]) -> Dict[str, EventRecord]:
