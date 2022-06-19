@@ -345,4 +345,12 @@ class Timeview:
         for year in range(min_date.year+1, max_date.year+1):
             if year % mod == 0:
                 chosen_dates.append(TimePoint(year=year, month=1, day=1))
+        if len(chosen_dates) > 20:  # Too many lines; view gets busy.
+            desired_max = 10  # Ten is pretty reasonable to keep.
+            skip = int(len(chosen_dates) / desired_max)
+            new_dates = []
+            for ii in range(0, len(chosen_dates), skip):
+                new_dates.append(chosen_dates[ii])
+            chosen_dates = new_dates
+
         return chosen_dates
