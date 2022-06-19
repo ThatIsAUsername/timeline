@@ -248,29 +248,40 @@ class Timeview:
                 label_surf = font.render(rec.name, antialias, color.BLACK)
                 lw, lh = label_surf.get_size()
                 label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
-                label_rect.midleft = (xss, height/2)  # Start by horizontally centering all labels.
+                label_rect.midleft = (xss, height/2)  # Start by vertically centering all labels.
                 label_rect.width = max(label_rect.width, label_surf.get_size()[0])
                 self.label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
 
-            # Deconflict as needed to position each label.
-            deconflicted_rects = []
-            deconflict_up = False
-            for li in self.label_infos:
-                deconflict_up = not deconflict_up
-                lr = li.label_rect
-                count = 0
-                idx = lr.collidelist(deconflicted_rects)
-                while idx != -1 and count < 10:
-                    count += 1
-
-                    # Find the rect we are hitting and move past it.
-                    other: pygame.Rect = deconflicted_rects[idx]
-                    if deconflict_up:
-                        lr.bottom = other.top
-                    else:
-                        lr.top = other.bottom
+            if len(self.label_infos) > 1:
+                # Deconflict as needed to position each label.
+                deconflicted_rects = []
+                deconflict_up = False  # Cascade events downward; then we'll recenter the whole mess.
+                min_y = self.label_infos[0].label_rect.midleft[1]
+                max_y = self.label_infos[0].label_rect.midleft[1]
+                for li in self.label_infos:
+                    lr = li.label_rect
+                    count = 0
                     idx = lr.collidelist(deconflicted_rects)
-                deconflicted_rects.append(lr)
+                    while idx != -1:
+                        count += 1
+
+                        # Find the rect we are hitting and move past it.
+                        other: pygame.Rect = deconflicted_rects[idx]
+                        if deconflict_up:
+                            lr.bottom = other.top
+                        else:
+                            lr.top = other.bottom
+                        idx = lr.collidelist(deconflicted_rects)
+                    min_y = lr.midleft[1] if lr.midleft[1] < min_y else min_y
+                    max_y = lr.midleft[1] if lr.midleft[1] > max_y else max_y
+                    deconflicted_rects.append(lr)
+
+                # Recenter the whole list of records vertically.
+                v_span = max_y - min_y
+                buffer = (height - v_span) / 2  # This much empty space above and below everything.
+                offset = buffer - min_y  # Move records up this much to center them.
+                for li in self.label_infos:
+                    li.label_rect.midleft = (li.label_rect.midleft[0], li.label_rect.midleft[1] + offset)
 
         for li in self.label_infos:
             # Render
