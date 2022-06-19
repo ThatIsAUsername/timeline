@@ -12,7 +12,7 @@ def run():
     fps_clock = pygame.time.Clock()
 
     timeline = Timeline()
-    timeline.load_records("data/rev_war.yaml")
+    timeline.load_records("data/examples.yaml")
     timeview = Timeview(timeline)
 
     drag_anchor = None

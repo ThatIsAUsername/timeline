@@ -1,0 +1,78 @@
+# List of timeline records
+# Possible fields for each entry:
+#
+# name (required)
+# id (optional - used for cross-referencing)
+# start
+# end
+# start_before
+# start_after
+# end_before
+# end_after
+# duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
+# info (one or more strings)
+#
+# Most fields can accept either a date or another event's ID (plus optional offset).
+# Dates are formatted as "[day] [mon] year"
+# IDs are strings, and simply need to match the "id" field of another record.
+# Fields given an ID may also take a temporal offset, formatted "[+-] #y #m #d", in any order, e.g. "+ 5d 3m 1y"
+# Entry IDs may also be augmented by ^/& to refer specifically to the beginning (^rec) or end (rec$) of that entry.
+#
+# E.g given two events, A and B:
+# name: A
+# end_before: B       # Event A ends before event B begins
+# end_before: ^B      # Event A ends before event B begins
+# end_before: B&      # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B             # Event A ends when event B begins
+# end: B&             # Event A ends when event B ends
+# end: B              # Event A ends sometime during event B
+# end_after: ^B       # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B        # Event A ends after event B ends
+# end_after: B&       # Event A ends after event B ends
+# duration: 1y 3m 2d  # Event A lasts for 1 year, 3 months, and 2 days. Can include any/all units.
+                      # Durations are as precise as specified; e.g. "1y" means at least 1 year, but less than 2.
+# end: B - 1y 2m      # Event A ends 1 year and 2 months before event B begins.
+# end: B$ - 1y 2m     # Event A ends 1 year and 2 months before event B ends.
+# end: B + 1y 2m      # Event A ends 1 year and 2 months after event B ends.
+
+Records:
+- name: No Defined Bounds
+
+- name: Accurate to the Day
+  start: 5 March 1000
+  end: 5 March 1010
+
+- name: Accurate to the Month
+  start: March 1000
+  end: March 1010
+
+- name: Accurate to the Year
+  start: 1000
+  end: 1010
+
+- name: Start After, End Before
+  start_after: 5 March 1000
+  end_before: 5 March 1010
+
+- name: Start with Duration
+  start: 5 March 1000
+  duration: 10y
+
+- name: Uncertain Start with Duration
+  start_after: 5 March 1000
+  start_before: 5 March 1001
+  duration: 10y
+
+- name: January 1000
+  id: jan1000
+  start: January 1000
+  end: January 1000
+
+- name: December 1009
+  id: dec1009
+  start: December 1009
+  end: December 1009
+
+- name: Offset Start and End
+  start_after: jan1000 + 4m
+  end_before: dec1009 - 4m
