@@ -17,6 +17,8 @@ def get_logger(name: str = None):
     new_logger.setLevel(logging.DEBUG)
     c_handler = logging.StreamHandler()
     logfile = os.path.join(os.getcwd(), f"logs/{name}.log")
+    if os.path.exists(logfile):
+        os.remove(logfile)
     f_handler = logging.FileHandler(logfile)
 
     c_handler.setLevel(logging.INFO)
