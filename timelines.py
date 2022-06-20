@@ -1,4 +1,6 @@
 
+import sys
+from typing import List
 import pygame
 from pygame_manager import PyGameManager as pgm
 from pygame.locals import *
@@ -7,12 +9,13 @@ from data_types import Timeline, Timeview, TimePoint
 from algorithms import interpolate
 
 
-def run():
+def run(file_list: List[str] = None):
+    file_list = file_list or ["data/examples.yaml"]
     pgm.initialize()
     fps_clock = pygame.time.Clock()
 
     timeline = Timeline()
-    timeline.load_records("data/examples.yaml")
+    timeline.load_records(file_list)
     timeview = Timeview(timeline)
 
     drag_anchor = None
@@ -69,4 +72,5 @@ def run():
 
 
 if __name__ == "__main__":
-    run()
+    file_list = [a for a in sys.argv][1:]
+    run(file_list)
