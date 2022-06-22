@@ -1,0 +1,109 @@
+# List of timeline records
+# Possible fields for each entry:
+#
+# name (required)
+# id (optional - used for cross-referencing)
+# start (formatted as [day] [MON] Year)
+# end (formatted as [day] [MON] Year)
+# start_before (date or other event)
+# start_after (date or other event)
+# end_before (date or other event)
+# end_after (date or other event)
+# duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
+# info (one or more strings)
+#
+# The start*/end* tags can accept ids of other entries within this file, augmented by ^/& modifiers.
+# E.g given two events, A and B:
+# name: A
+# end_before: B   # Event A ends before event B begins
+# end_before: ^B  # Event A ends before event B begins
+# end_before: B&  # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B         # Event A ends when event B begins
+# end: B&         # Event A ends when event B ends
+# end: B          # Event A ends sometime during event B
+# end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B    # Event A ends after event B ends
+# end_after: B&   # Event A ends after event B ends
+
+Records:
+- name: Great Flood
+  id: great_flood
+  duration: 150d
+
+- name: Life of Shem
+  id: life_of_shem
+  start: great_flood$ - 98y
+  end: ^life_of_arpachsad + 500y
+  duration: 600y
+  info:
+  - Gen 5:32
+  - Gen 11:10
+
+- name: Life of Arpachsad
+  id: life_of_arpachsad
+  start: ^life_of_shem + 100y
+  end: ^life_of_shelah + 403y
+  info: Gen 11:10-13
+
+- name: Life of Shelah
+  id: life_of_shelah
+  start: ^life_of_arpachsad + 35y
+  end: ^life_of_eber + 403y
+  info: Gen 11:12-15
+
+- name: Life of Eber
+  id: life_of_eber
+  start: ^life_of_shelah + 30y
+  end: ^life_of_peleg + 430y
+  info: Gen 11:14-17
+
+- name: Life of Peleg
+  id: life_of_peleg
+  start: ^life_of_eber + 34y
+  end: ^life_of_reu + 209y
+  info: Gen 11:16-19
+
+- name: Life of Reu
+  id: life_of_reu
+  start: ^life_of_peleg + 30y
+  end: ^life_of_serug + 207y
+  info: Gen 11:118-21
+
+- name: Life of Serug
+  id: life_of_serug
+  start: ^life_of_reu + 32y
+  end: ^life_of_nahor + 200y
+  info: Gen 11:20-23
+
+- name: Life of Nahor
+  id: life_of_nahor
+  start: ^life_of_serug + 30y
+  end: ^life_of_terah + 119y
+  info: Gen 11:22-25
+
+- name: Life of Terah
+  id: life_of_terah
+  start: ^life_of_nahor + 29y
+  duration: 205y
+  info: Gen 11:24-32
+
+- name: Life of Abram
+  id: life_of_abram
+  start_after: ^life_of_terah + 70y
+  start_before: life_of_terah$
+  end_before: ^life_of_abram + 300y
+  info: Gen 11:26
+
+- name: Life of Nahor II
+  id: life_of_nahor_ii
+  start_before: ^life_of_terah + 70y
+  start_after: ^life_of_terah
+  end_before: ^life_of_nahor_ii + 300y
+  info: Gen 11:26
+
+- name: Life of Haran
+  id: life_of_haran
+  start_before: ^life_of_terah + 70y
+  start_after: ^life_of_terah
+  end_before: life_of_terah$
+  info: Gen 11:26-28

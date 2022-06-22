@@ -1,0 +1,154 @@
+# List of timeline records
+# All dates are formatted as "[day] [MON] Year"
+# Possible fields for each entry:
+#
+# name (required)
+# id (optional - used for cross-referencing)
+# start (date or other event) - one or a list.
+# end (date or other event) - one or a list.
+# start_before (date or other event) - one or a list.
+# start_after (date or other event) - one or a list.
+# end_before (date or other event) - one or a list.
+# end_after (date or other event) - one or a list.
+# duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
+# info (one or more strings)
+#
+# The start*/end* tags can accept ids of other entries within this file, augmented by ^/& modifiers.
+# E.g given two events, A and B:
+# name: A
+# end_before: B   # Event A ends before event B begins
+# end_before: ^B  # Event A ends before event B begins
+# end_before: B&  # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B         # Event A ends when event B begins
+# end: B&         # Event A ends when event B ends
+# end: B          # Event A ends sometime during event B
+# end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B    # Event A ends after event B ends
+# end_after: B&   # Event A ends after event B ends
+
+Records:
+- name: Creation
+  id: creation
+  start: 1 Jan 0
+  duration: 7d
+
+- name: Life of Adam
+  id: life_of_adam
+  start: ^creation + 6d
+  end: ^life_of_seth + 800y
+  info:
+  - Gen 1:26-31
+  - Gen 5:4-5
+
+- name: Fall
+  id: fall
+  start_after: creation
+  end_before:
+  - life_of_cain
+  - life_of_seth
+
+- name: Life of Cain
+  id: life_of_cain
+  start_after: creation
+  start_before: life_of_seth
+  end_before: ^life_of_cain + 1000y
+
+- name: Life of Abel
+  id: life_of_abel
+  start_after: ^life_of_cain
+  end_before:
+  - life_of_seth
+
+- name: Life of Seth
+  id: life_of_seth
+  start: ^life_of_adam + 130y
+  start_after:
+  - ^life_of_cain
+  - life_of_abel$
+  end: ^life_of_enosh + 807y
+  info: Gen 5:3-7
+
+- name: Life of Enosh
+  id: life_of_enosh
+  start: ^life_of_seth + 105y
+  end: ^life_of_kenan + 815y
+  info: Gen 5:6-11
+
+- name: Life of Kenan
+  id: life_of_kenan
+  start: ^life_of_enosh + 90y
+  end: ^life_of_mahalalel + 840y
+  info: Gen 5:9-14
+
+- name: Life of Mahalalel
+  id: life_of_mahalalel
+  start: ^life_of_kenan + 70y
+  end: ^life_of_jared + 830y
+  info: Gen 5:12-17
+
+- name: Life of Jared
+  id: life_of_jared
+  start: ^life_of_mahalalel + 65y
+  end: ^life_of_enoch + 800y
+  info: Gen 5:15-20
+
+- name: Life of Enoch
+  id: life_of_enoch
+  start: ^life_of_jared + 162y
+  end: ^life_of_methuselah + 300y
+  info: Gen 5:18-24
+
+- name: Life of Methuselah
+  id: life_of_methuselah
+  start: ^life_of_enoch + 65y
+  end: ^life_of_lamech + 782y
+  info: Gen 5:21-27
+
+- name: Life of Lamech
+  id: life_of_lamech
+  start: ^life_of_methuselah + 187y
+  end: ^life_of_noah + 595y
+  info: Gen 5:25-31
+
+- name: Life of Noah
+  id: life_of_noah
+  start: ^life_of_lamech + 182y
+  end: ^great_flood + 350y
+  duration: 950y
+  info:
+  - Gen 5:25-31
+  - Gen 9:28-29
+
+- name: Life of Shem
+  id: life_of_shem
+  start_after: ^life_of_noah + 500y
+  end_before: ^life_of_shem + 1000y
+  info: Gen 5:32
+
+- name: Life of Ham
+  id: life_of_ham
+  start_after: ^life_of_noah + 500y
+  start_before: ^great_flood
+  end_before: ^life_of_ham + 1000y
+  end_after: ark_debark
+  info: Gen 5:32
+
+- name: Life of Japheth
+  id: life_of_japheth
+  start_after: ^life_of_noah + 500y
+  start_before: ^great_flood
+  end_before: ^life_of_japheth + 1000y
+  end_after: ark_debark
+  info: Gen 5:32
+
+- name: Great Flood
+  id: great_flood
+  start: ^life_of_noah + 600y
+  duration: 150d
+  info: Gen 7:6, 24
+
+- name: Ark Debark
+  id: ark_debark
+  start: ^life_of_noah + 601y
+  duration: 1d
+  info: Gen 8:13
