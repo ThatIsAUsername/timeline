@@ -3,28 +3,37 @@
 #
 # name (required)
 # id (optional - used for cross-referencing)
-# start (formatted as [day] [MON] Year)
-# end (formatted as [day] [MON] Year)
-# start_before (date or other event)
-# start_after (date or other event)
-# end_before (date or other event)
-# end_after (date or other event)
-# duration (in days)
-# tags (one or more strings)
-# sources (one or more numbers)
+# start
+# end
+# start_before
+# start_after
+# end_before
+# end_after
+# duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
+# info (one or more strings)
 #
-# The start*/end* tags can accept ids of other entries within this file, augmented by ^/& modifiers.
+# Most fields can accept either a date or another event's ID (plus optional offset).
+# Dates are formatted as "[day] [mon] year"
+# IDs are strings, and simply need to match the "id" field of another record.
+# Fields given an ID may also take a temporal offset, formatted "[+-] #y #m #d", in any order, e.g. "+ 5d 3m 1y"
+# Entry IDs may also be augmented by ^/& to refer specifically to the beginning (^rec) or end (rec$) of that entry.
+#
 # E.g given two events, A and B:
 # name: A
-# end_before: B   # Event A ends before event B begins
-# end_before: ^B  # Event A ends before event B begins
-# end_before: B&  # Event A ends before event B ends (but not necessarily after it begins)
-# end: ^B         # Event A ends when event B begins
-# end: B&         # Event A ends when event B ends
-# end: B          # Event A ends sometime during event B
-# end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
-# end_after: B    # Event A ends after event B ends
-# end_after: B&   # Event A ends after event B ends
+# end_before: B       # Event A ends before event B begins
+# end_before: ^B      # Event A ends before event B begins
+# end_before: B&      # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B             # Event A ends when event B begins
+# end: B&             # Event A ends when event B ends
+# end: B              # Event A ends sometime during event B
+# end_after: ^B       # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B        # Event A ends after event B ends
+# end_after: B&       # Event A ends after event B ends
+# duration: 1y 3m 2d  # Event A lasts for 1 year, 3 months, and 2 days. Can include any/all units.
+                      # Durations are as precise as specified; e.g. "1y" means at least 1 year, but less than 2.
+# end: B - 1y 2m      # Event A ends 1 year and 2 months before event B begins.
+# end: B$ - 1y 2m     # Event A ends 1 year and 2 months before event B ends.
+# end: B + 1y 2m      # Event A ends 1 year and 2 months after event B ends.
 
 # Fictitious person's timeline to test things.
 
