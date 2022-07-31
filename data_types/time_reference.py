@@ -31,10 +31,13 @@ class TimeReference:
                         If a date string, the day and month are optional, but day is required if month is present.
                         NOTE: This can also be a List of entries to denote multiple constraints.
         """
-        self.min = None
-        self.max = None
+        self.min: TimePoint = None
+        self.max: TimePoint = None
 
         self._older_refs, self._later_refs = self._unpack_constraints(absolutes, older, later)
+
+    def __str__(self) -> str:
+        return f"{self.min}-{self.max}"
 
     def _unpack_constraints(self, absolutes: List[str] = None, older: List[str] = None, later: List[str] = None) -> Tuple[List, List]:
         aoc, alc = self._unpack_absolute_constraints(absolutes)

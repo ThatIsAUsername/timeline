@@ -32,19 +32,18 @@ def run(file_list: List[str] = None):
                 width, height = pgm.get_screen().get_size()
                 focus_date_ordinal = interpolate(mx, (0, width), (timeview.min.ordinal(), timeview.max.ordinal()))
                 focus_date_ordinal = round(focus_date_ordinal)
-                focus_date = TimePoint.from_ordinal(focus_date_ordinal)
                 wheel_forward = event.y > 0
                 wheel_backward = event.y < 0
                 if wheel_forward:
-                    timeview.zoom_in(focus_date)
+                    timeview.zoom_in(focus_date_ordinal)
                 if wheel_backward:
-                    timeview.zoom_out(focus_date)
+                    timeview.zoom_out(focus_date_ordinal)
             elif event.type == MOUSEBUTTONDOWN:
                 mousex, mousey = event.pos
                 width, height = pgm.get_screen().get_size()
                 anchor_ordinal = interpolate(mousex, (0, width),
                                              (timeview.min.ordinal(), timeview.max.ordinal()))
-                drag_anchor = TimePoint.from_ordinal(int(anchor_ordinal))
+                drag_anchor = int(anchor_ordinal)
 
             elif event.type == MOUSEBUTTONUP:
                 drag_anchor = None
@@ -55,8 +54,8 @@ def run(file_list: List[str] = None):
                     width, height = pgm.get_screen().get_size()
                     x_ordinal = interpolate(mousex, (0, width),
                                             (timeview.min.ordinal(), timeview.max.ordinal()))
-                    x_time = TimePoint.from_ordinal(int(x_ordinal))
-                    timeview.pan(drag_anchor - x_time)
+                    x_offset = int(drag_anchor - x_ordinal)
+                    timeview.pan(x_offset)
 
         surf = pgm.get_screen()
         timeview.render(surf)

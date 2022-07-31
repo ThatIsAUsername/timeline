@@ -50,7 +50,9 @@ class Timeview:
             bg.hsva = (hue, 50, 90, 0)
             self.record_colors[rec_id] = (fg, bg)
 
-    def contains(self, timelike: Union[data_types.TimePoint, data_types.TimeReference, data_types.EventRecord]) -> bool:
+    def contains(self, timelike: Union[int, data_types.TimePoint, data_types.TimeReference, data_types.EventRecord]) -> bool:
+        if type(timelike) is int:
+            return self.min.ordinal() <= timelike <= self.max.ordinal()
         if type(timelike) is TimePoint:
             return self.contains_date(timelike)
         elif type(timelike) is data_types.TimeReference:
@@ -116,47 +118,45 @@ class Timeview:
                 visible_records.append(rec)
         return visible_records
 
-    def zoom_in(self, focus: TimePoint) -> None:
+    def zoom_in(self, focus: int) -> None:
         """
-        Changes the view's min and/or max to narrow the view on the provided TimePoint.
+        Changes the view's min and/or max to narrow the view on the provided ordinal day.
         Args:
-            focus: The TimePoint to zoom in towards.
+            focus: The ordinal day to zoom in towards.
 
         Returns:
             None
         """
-        assert self.contains(focus), f"Cannot zoom on a date ({focus}) outside the view ({self.min}-{self.max})"
+        assert self.contains(focus), f"Cannot zoom on a day ({focus}) outside the view ({self.min.ordinal()}-{self.max.ordinal()})"
 
         min_ord = self.min.ordinal()
         max_ord = self.max.ordinal()
-        foc_ord = focus.ordinal()
 
-        lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
-        hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
+        lo_shift = timedelta((focus - min_ord) * (1-self.ZOOM_RATIO))
+        hi_shift = timedelta((max_ord - focus) * (1-self.ZOOM_RATIO))
 
         self.min = self.min + lo_shift
         self.max = self.max - hi_shift
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
 
-    def zoom_out(self, focus: TimePoint) -> None:
+    def zoom_out(self, focus: int) -> None:
         """
-        Changes the view's min and/or max to widen the view around the provided TimePoint.
+        Changes the view's min and/or max to widen the view around the provided ordinal day.
         Args:
-            focus: The TimePoint to zoom out from.
+            focus: The ordinal of the date to zoom out from.
 
         Returns:
             None
         """
-        assert self.contains(focus), f"Cannot zoom on a date ({focus}) outside the view ({self.min}-{self.max})"
+        assert self.contains(focus), f"Cannot zoom on a day ({focus}) outside the view ({self.min.ordinal()}-{self.max.ordinal()})"
 
         min_ord = self.min.ordinal()
         max_ord = self.max.ordinal()
-        foc_ord = focus.ordinal()
 
         zoom_frac = 1/(1-self.ZOOM_RATIO)
-        lo_shift = timedelta((foc_ord - min_ord) * (1-self.ZOOM_RATIO))
-        hi_shift = timedelta((max_ord - foc_ord) * (1-self.ZOOM_RATIO))
+        lo_shift = timedelta((focus - min_ord) * (1-self.ZOOM_RATIO))
+        hi_shift = timedelta((max_ord - focus) * (1-self.ZOOM_RATIO))
 
         try:
             self.min = self.min - hi_shift
@@ -172,25 +172,25 @@ class Timeview:
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
 
-    def pan(self, delta: timedelta) -> None:
+    def pan(self, delta_days: int) -> None:
         """
         Shift the view by the prescribed delta.
 
         Args:
-            delta: The amount to shift both the min and max bounds of the view.
+            delta_days: The number of days to shift both the min and max bounds of the view.
 
         Returns:
             None
         """
         try:
-            self.min = self.min + delta
-        except OverflowError as oe:
+            self.min = self.min + timedelta(days=delta_days)
+        except OverflowError:
             log = get_logger()
             log.warning(f"Attempting to pan view past the beginning of time!")
 
         try:
-            self.max = self.max + delta
-        except OverflowError as oe:
+            self.max = self.max + timedelta(days=delta_days)
+        except OverflowError:
             log = get_logger()
             log.warning(f"Attempting to pan view past the end of time!")
 

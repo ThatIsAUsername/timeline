@@ -144,7 +144,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_in(min_date)
+        view.zoom_in(min_date.ordinal())
 
         # Assert
         self.assertTrue(view.contains(min_date), "Early date should still be in view")
@@ -158,7 +158,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_in(max_date)
+        view.zoom_in(max_date.ordinal())
 
         # Assert
         self.assertGreater(view.min, min_date, "Early date should have shifted right")
@@ -173,7 +173,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_in(mid_date)
+        view.zoom_in(mid_date.ordinal())
 
         # Assert
         self.assertGreater(view.min, min_date, "Early date should have shifted right")
@@ -187,7 +187,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_out(min_date)
+        view.zoom_out(min_date.ordinal())
 
         # Assert
         self.assertTrue(view.contains(min_date), "Early date should still be in view")
@@ -201,7 +201,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_out(max_date)
+        view.zoom_out(max_date.ordinal())
 
         # Assert
         self.assertTrue(view.contains(min_date), "Early date should still be in view")
@@ -216,7 +216,7 @@ class TestTimeview(unittest.TestCase):
         max_date = TimePoint(year=2040, month=6, day=5)
 
         # Act
-        view.zoom_out(mid_date)
+        view.zoom_out(mid_date.ordinal())
 
         # Assert
         self.assertTrue(view.contains(min_date), "Early date should still be in view")
@@ -226,16 +226,14 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = TimePoint(year=1970, month=8, day=17)
-        max_date = TimePoint(year=2040, month=6, day=5)
 
-        delta = timedelta(days=10)
-
-        min_ans = TimePoint(year=1970, month=8, day=27)
-        max_ans = TimePoint(year=2040, month=6, day=15)
+        delta_days = 10
+        td = timedelta(days=10)
+        min_ans = view.min + td
+        max_ans = view.max + td
 
         # Act
-        view.pan(delta)
+        view.pan(delta_days)
 
         # Assert
         self.assertEqual(view.min, min_ans)
@@ -245,16 +243,14 @@ class TestTimeview(unittest.TestCase):
 
         # Arrange
         view = Timeview(self.timeline)
-        min_date = TimePoint(year=1970, month=8, day=17)
-        max_date = TimePoint(year=2040, month=6, day=5)
 
-        delta = timedelta(days=-4)
-
-        min_ans = TimePoint(year=1970, month=8, day=13)
-        max_ans = TimePoint(year=2040, month=6, day=1)
+        delta_days = -4
+        td = timedelta(days=-4)
+        min_ans = view.min + td
+        max_ans = view.max + td
 
         # Act
-        view.pan(delta)
+        view.pan(delta_days)
 
         # Assert
         self.assertEqual(view.min, min_ans)
