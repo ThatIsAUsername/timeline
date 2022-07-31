@@ -58,11 +58,6 @@ def run(file_list: List[str] = None):
                     x_time = TimePoint.from_ordinal(int(x_ordinal))
                     timeview.pan(drag_anchor - x_time)
 
-            # if event.type == MOUSEBUTTONUP:
-            #     mousex, mousey = event.pos
-            #     if play_rect.collidepoint(mousex, mousey):
-            #         choose_board()
-
         surf = pgm.get_screen()
         timeview.render(surf)
         pygame.display.update()
