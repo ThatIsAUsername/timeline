@@ -56,6 +56,8 @@ def run(file_list: List[str] = None):
                                             (timeview.min.ordinal(), timeview.max.ordinal()))
                     x_offset = int(drag_anchor - x_ordinal)
                     timeview.pan(x_offset)
+            elif event.type == WINDOWRESIZED:
+                timeview.force_redraw()
 
         surf = pgm.get_screen()
         timeview.render(surf)

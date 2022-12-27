@@ -35,6 +35,7 @@ class Timeview:
         self.render_max = data_types.SlidingValue(self.min.ordinal())
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
+        self.render_force = False
 
         # Store the drawable information to avoid recalculating every frame.
         self.guidelines = []
@@ -197,9 +198,16 @@ class Timeview:
         self.render_min.set(self.min.ordinal())
         self.render_max.set(self.max.ordinal())
 
+    def force_redraw(self):
+        """
+        The next call to render will regenerate the window unconditionally.
+        """
+        self.render_force = True
+
     def render(self, surf: pygame.Surface):
 
-        regen_view = not self.render_min.is_at_destination() or not self.render_max.is_at_destination()
+        regen_view = self.render_force or (not self.render_min.is_at_destination() or not self.render_max.is_at_destination())
+        self.render_force = False
 
         # First draw the background
         surf.fill(color.WHITE)
