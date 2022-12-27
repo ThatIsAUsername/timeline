@@ -24,7 +24,7 @@ def preprocess_event_data(data_list: List[EventData]) -> Dict[str, EventData]:
 
     # Loop through all EventData objects and ensure they all have an id, merging duplicates.
     _logger = get_logger()
-    processed_records = {}
+    processed_records: Dict[str, EventData] = {}
     for rr in ordered_list:
         # If the record has no 'id' specified, generate one.
         if not rr.id:
@@ -39,22 +39,21 @@ def preprocess_event_data(data_list: List[EventData]) -> Dict[str, EventData]:
                 deconflict += 1
 
             rr.id = final_id
+            processed_records[rr.id] = rr
         else:
             # If there is an explicit id, and it already
             # exists, then merge the two event records.
-            rec_id = rr.id
-            if rec_id in processed_records:
-                _logger.debug(f"Found a record with repeat id '{rec_id}'. Merging")
-                processed_records[rec_id].merge(rr)
+            if rr.id in processed_records:
+                rr.merge(processed_records[rr.id])
 
-        processed_records[rr.id] = rr
+            processed_records[rr.id] = rr
 
     # Filter the processed records into a final list to prune
     # duplicates and maintain the initial ordering.
     final_dict = {}
-    for dat in data_list:
-        if dat.id not in final_dict:
-            final_dict[dat.id] = dat
+    for rec_id, rec in processed_records.items():
+        if rec_id not in final_dict:
+            final_dict[rec_id] = rec
     return final_dict
 
 
