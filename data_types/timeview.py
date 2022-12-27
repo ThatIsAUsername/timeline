@@ -289,12 +289,17 @@ class Timeview:
             lr = li.label_rect
             fgc, bgc = self.record_colors[li.id]
             xss, xse, xes, xee = li.x_vals
-            pygame.draw.rect(surface=surf,
+            xspan = xee-xss
+            line_width = 2 if xspan >= 4 else 1 if xspan >= 2 else 1
+            if xspan > 1:
+                pygame.draw.rect(surface=surf,
                              color=fgc,
-                             rect=(xss, lr.top, xee-xss, lr.height),
+                             rect=(xss, lr.top, xspan, lr.height),
                              border_radius=int(lr.height/2),
-                             width=2
+                             width=line_width
                              )
+            else:  # Just draw a single 1-pixel line so it doesn't disappear entirely.
+                pygame.draw.line(surface=surf, color=fgc, start_pos=(xss, lr.top), end_pos=(xss, lr.top+lr.height))
 
             # Draw a filled area showing the time during which the event was occurring (start.max to end.min).
             if xse <= xes:
