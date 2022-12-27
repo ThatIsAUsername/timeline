@@ -110,3 +110,30 @@ class TestAssignIds(unittest.TestCase):
         self.assertEqual(len(records), len(record_list))
         self.assertIn('nd', rec_ids)
         self.assertIn('nd2', rec_ids)
+
+    def test_merge(self):
+
+        # Arrange
+        record_list = [{'name': 'Life', 'id': 'life', 'start_before': 'birth'},
+                       {'name': 'Birth', 'id': 'birth', 'start': '17 Aug 1970', 'end': '17 Aug 1970'},
+                       {'name': 'Death', 'id': 'death', 'start': '5 Jun 2040', 'end': '5 Jun 2040'},
+                       {'name': 'Life', 'id': 'life', 'end': 'death'},  # Life definition spread across multiple entries.
+                       {'name': 'Life', 'id': 'life', 'end_after': 'birth'},  # Life definition spread across multiple entries.
+                       ]
+        ids = set([item['id'] for item in record_list])  # Convert to a set of ids to get the true number of entries.
+        true_len = len(ids)
+
+        # Act
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventData] = preprocess_event_data(evt_datas)
+        rec_ids: List[str] = list(records.keys())
+
+        # Assert
+        self.assertEqual(len(records), true_len)
+        for entry in record_list:
+            self.assertIn(entry['id'], rec_ids)
+
+        life_entry = records['life']
+        self.assertTrue(life_entry.start_before)
+        self.assertTrue(life_entry.end_after)
+        self.assertTrue(life_entry.end)
