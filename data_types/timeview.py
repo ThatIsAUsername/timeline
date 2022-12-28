@@ -1,7 +1,7 @@
 
 import math
 from random import randrange
-from typing import List, Union
+from typing import List, Tuple, Union
 from collections import namedtuple
 
 import pygame
@@ -30,11 +30,19 @@ class Timeview:
         self.min: TimePoint = self.timeline.min
         self.max: TimePoint = self.timeline.max
 
-        # The view is redrawn based on whether it has changed. So. Make sure it changes to begin.
+        # Invert min/max for starting positions so we get a nice zoom effect on startup.
         self.render_min = data_types.SlidingValue(self.max.ordinal())
         self.render_max = data_types.SlidingValue(self.min.ordinal())
-        self.render_min.set(self.min.ordinal())
-        self.render_max.set(self.max.ordinal())
+
+        # Set the target zoom to frame the records with a buffer on each side.
+        min_ord = self.min.ordinal()
+        max_ord = self.max.ordinal()
+        framing_ratio = 0.02
+        framing_ord = (max_ord-min_ord)*framing_ratio
+        frame_min = min_ord - framing_ord
+        frame_max = max_ord + framing_ord
+        self.render_min.set(frame_min)
+        self.render_max.set(frame_max)
         self.render_force = False
 
         # Store the drawable information to avoid recalculating every frame.
@@ -155,7 +163,6 @@ class Timeview:
         min_ord = self.min.ordinal()
         max_ord = self.max.ordinal()
 
-        zoom_frac = 1/(1-self.ZOOM_RATIO)
         lo_shift = timedelta((focus - min_ord) * (1-self.ZOOM_RATIO))
         hi_shift = timedelta((max_ord - focus) * (1-self.ZOOM_RATIO))
 
@@ -218,19 +225,13 @@ class Timeview:
 
         width, height = surf.get_size()
 
-        buffer_pct = 0.02
-        buffer_px = int(width*buffer_pct)
-        # buffer_s = time_range_s * buffer_pct  # Give a little leeway around the denoted view range.
-        # buffer_delta = timedelta(seconds=buffer_s)
-        screen_range = (buffer_px, width-buffer_px)
-
         font = pgm.get_font()
 
         # Figure out where to draw guidelines. Then draw them.
         if regen_view:
             self.guidelines = self.generate_guidelines(self.min, self.max)
         for gl in self.guidelines:
-            glx = interpolate(gl.ordinal(), timeview_range, screen_range)
+            glx = interpolate(gl.ordinal(), timeview_range, (0, width))
             pygame.draw.line(surface=surf, color=color.LIGHT_GRAY, start_pos=(glx, 0), end_pos=(glx, height))
             antialias = True
             text = font.render(str(gl.year), antialias, color.LIGHT_GRAY)
@@ -238,65 +239,11 @@ class Timeview:
             surf.blit(text, (glx+5, 5))
             surf.blit(text, (glx+5, height - text_size[1] - 5))
 
-        timeline_y = height / 2
-
         # Regenerate the drawable time events if the view changed.
         if regen_view:
             # Generate positions/rects for all timeline elements
             visible_records = self.get_visible()
-
-            # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
-            self.label_infos = []
-            for rec in visible_records:
-                xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.ordinal(), timeview_range, screen_range)
-                xse = width if rec.start.max == math.inf else interpolate(rec.start.max.ordinal(), timeview_range, screen_range)
-                xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.ordinal(), timeview_range, screen_range)
-                xee = width+10 if rec.end.max == math.inf else interpolate(rec.end.max.ordinal(), timeview_range, screen_range)
-                antialias = True  # render takes no keyword arguments.
-                label_surf = font.render(rec.name, antialias, color.BLACK)
-                lw, lh = label_surf.get_size()
-                label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
-                label_rect.midleft = (xss, height/2)  # Start by vertically centering all labels.
-                label_rect.width = max(label_rect.width, label_surf.get_size()[0])
-                self.label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
-
-            if len(self.label_infos) > 1:
-                # Deconflict as needed to position each label.
-                deconflicted_rects = []
-                min_y = self.label_infos[0].label_rect.midleft[1]
-                max_y = self.label_infos[0].label_rect.midleft[1]
-
-                # Settings to determine how events are arranged.
-                deconflict_claw = False
-                center_new_events = False  # Whether new events should be centered vertically if possible, or continue outward.
-                deconflict_up = False
-
-                min_top = self.label_infos[0].label_rect.top
-                for li in self.label_infos:
-                    lr: pygame.rect.Rect = li.label_rect
-                    if not center_new_events:
-                        lr.top = min_top
-                    idx = lr.collidelist(deconflicted_rects)
-                    while idx != -1:
-                        # Find the rect we are hitting and move past it.
-                        other: pygame.Rect = deconflicted_rects[idx]
-                        if deconflict_up:
-                            lr.bottom = other.top
-                        else:
-                            lr.top = other.bottom
-                        idx = lr.collidelist(deconflicted_rects)
-                    deconflict_up = not deconflict_up if deconflict_claw else deconflict_up
-                    min_y = lr.midleft[1] if lr.midleft[1] < min_y else min_y
-                    max_y = lr.midleft[1] if lr.midleft[1] > max_y else max_y
-                    min_top = lr.top
-                    deconflicted_rects.append(lr)
-
-                # Recenter the whole list of records vertically.
-                v_span = max_y - min_y
-                buffer = (height - v_span) / 2  # This much empty space above and below everything.
-                offset = buffer - min_y  # Move records up this much to center them.
-                for li in self.label_infos:
-                    li.label_rect.midleft = (li.label_rect.midleft[0], li.label_rect.midleft[1] + offset)
+            self.calculate_record_positions(visible_records, width, height, timeview_range)
 
         for li in self.label_infos:
             # Render
@@ -374,3 +321,74 @@ class Timeview:
             chosen_dates = new_dates
 
         return chosen_dates
+
+    def calculate_record_positions(self,
+                                   visible_records: List[data_types.EventRecord],
+                                   window_width_px: int,
+                                   window_height_px: int,
+                                   timeview_range: Tuple[int, int],
+                                   ):
+        """
+        Figure out where to draw all the records on the window.
+
+        Args:
+            visible_records: All records that are to be positioned. May be a subset or everything.
+            screen_width_px: Current width of the drawable window in pixels.
+            screen_height_px: Current height of the drawable window in pixels.
+            timeview_range: Ordinal min/max values of the beginning/end of the visible timeline.
+        """
+        # Generate all drawable labels and figure out the horizontal extents of each EventRecord.
+        self.label_infos = []
+        for rec in visible_records:
+            w_range = (0, window_width_px)
+            xss = -10 if rec.start.min == -math.inf else interpolate(rec.start.min.ordinal(), timeview_range, w_range)
+            xse = window_width_px+10 if rec.start.max == math.inf else interpolate(rec.start.max.ordinal(), timeview_range, w_range)
+            xes = -10 if rec.end.min == -math.inf else interpolate(rec.end.min.ordinal(), timeview_range, w_range)
+            xee = window_width_px+10 if rec.end.max == math.inf else interpolate(rec.end.max.ordinal(), timeview_range, w_range)
+            antialias = True  # render takes no keyword arguments.
+            label_surf = pgm.get_font().render(rec.name, antialias, color.BLACK)
+            lw, lh = label_surf.get_size()
+            label_rect = pygame.rect.Rect((0, 0), (xee-xss, lh+4))  # build a rect around the whole rendered record.
+            label_rect.midleft = (xss, window_height_px/2)  # Start by vertically centering all labels.
+            label_rect.width = max(label_rect.width, label_surf.get_size()[0])
+            self.label_infos.append(LabelInfo(id=rec.id, x_vals=[xss, xse, xes, xee], label_surf=label_surf, label_rect=label_rect))
+
+        min_y = self.label_infos[0].label_rect.midleft[1]
+        max_y = self.label_infos[0].label_rect.midleft[1]
+        if len(self.label_infos) > 1:
+            # Deconflict as needed to position each label.
+            deconflicted_rects = []
+
+            # Settings to determine how events are arranged.
+            deconflict_claw = False  # If true, alternate deconflicting records up and down to keep everything more centered.
+            center_new_events = False  # Whether new events should be centered vertically if possible, or continue outward.
+            deconflict_up = False  # Starting deconfliction direction.
+
+            min_top = self.label_infos[0].label_rect.top
+            for li in self.label_infos:
+                xss, xse, xes, xee = li.x_vals
+
+                lr: pygame.rect.Rect = li.label_rect
+                if not center_new_events:
+                    lr.top = min_top
+                idx = lr.collidelist(deconflicted_rects)
+                while idx != -1:
+                    # Find the rect we are hitting and move past it.
+                    other: pygame.Rect = deconflicted_rects[idx]
+                    if deconflict_up:
+                        lr.bottom = other.top
+                    else:
+                        lr.top = other.bottom
+                    idx = lr.collidelist(deconflicted_rects)
+                deconflict_up = not deconflict_up if deconflict_claw else deconflict_up
+                min_y = lr.midleft[1] if lr.midleft[1] < min_y else min_y
+                max_y = lr.midleft[1] if lr.midleft[1] > max_y else max_y
+                min_top = lr.bottom
+                deconflicted_rects.append(lr)
+
+        # Recenter the whole list of records vertically.
+        v_span = max_y - min_y
+        buffer = (window_height_px - v_span) / 2  # This much empty space above and below everything.
+        offset = buffer - min_y  # Move records up this much to center them.
+        for li in self.label_infos:
+            li.label_rect.midleft = (li.label_rect.midleft[0], li.label_rect.midleft[1] + offset)
