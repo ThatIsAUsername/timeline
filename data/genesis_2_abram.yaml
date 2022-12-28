@@ -1,0 +1,123 @@
+# List of timeline records
+# Possible fields for each entry:
+#
+# name (required)
+# id (optional - used for cross-referencing)
+# start (formatted as [day] [MON] Year)
+# end (formatted as [day] [MON] Year)
+# start_before (date or other event)
+# start_after (date or other event)
+# end_before (date or other event)
+# end_after (date or other event)
+# duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
+# info (one or more strings)
+#
+# The start*/end* tags can accept ids of other entries within this file, augmented by ^/$ modifiers.
+# E.g given two events, A and B:
+# name: A
+# end_before: B   # Event A ends before event B begins
+# end_before: ^B  # Event A ends before event B begins
+# end_before: B$  # Event A ends before event B ends (but not necessarily after it begins)
+# end: ^B         # Event A ends when event B begins
+# end: B$         # Event A ends when event B ends
+# end: B          # Event A ends sometime during event B
+# end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
+# end_after: B    # Event A ends after event B ends
+# end_after: B$   # Event A ends after event B ends
+
+Records:
+- name: Life of Abram
+  id: life_of_abram
+  start: ^abram_departs_haran - 75y
+  duration: 175y
+  info: Gen 25:7
+
+- name: Abram departs Haran
+  id: abram_departs_haran
+  start:
+#    - ^life_of_abram + 75y
+    - life_of_terah$
+  duration: 1d
+  info:
+  - Gen 12:4
+  - Acts 7:2-4
+
+- name: Life of Sarah
+  id: life_of_sarah
+  end_after: ^life_of_isaac
+  end_before:
+    - life_of_abram$
+    - isaac_marries_rebekah
+  duration: 127y
+  info: Gen 23:1
+
+- name: Enslavement in Egypt
+  id: enslavement_in_egypt
+  duration: 400y
+  info: Gen 15:13
+
+- name: Life of Ishmael
+  id: life_of_ishmael
+  start: ^life_of_abram + 86y
+  duration: 137y
+  info: Gen 16:16
+
+- name: Abrahamic Covenant
+  id: abrahamic_covenant
+  start: ^life_of_abram + 99y
+  info: Gen 17:1-16
+
+- name: Destruction of Sodom and Gomorrah
+  id: sodom_gomorrah
+  start_after: ^abrahamic_covenant
+  end_before: life_of_isaac
+  duration: 1d
+  info: Gen 19
+
+- name: Life of Isaac
+  id: life_of_isaac
+  start: ^life_of_abram + 100y
+  duration: 180y
+  info:
+    - Gen 21:5
+    - Gen 35:28
+
+- name: Isaac Marries Rebekah
+  id: isaac_marries_rebekah
+  start: ^life_of_isaac + 40y
+  duration: 1d
+  info: Gen 25:20
+
+- name: Life of Jacob
+  id: life_of_jacob
+  start: ^life_of_isaac + 60y
+  end_before: ^life_of_jacob + 200y
+  info: Gen 25:26
+
+- name: Life of Esau
+  id: life_of_esau
+  start: ^life_of_isaac + 60y
+  end_after: esau_marries
+  end_before: ^life_of_esau + 200y
+  info: Gen 25:26
+
+- name: Esau Marries
+  id: esau_marries
+  start: ^life_of_esau + 40y
+  duration: 1d
+  info: Gen 26:34
+
+- name: Isaac Blesses Jacob
+  id: isaac_blesses_jacob
+  start_after: esau_marries
+  end_before: jacob_serves_laban
+  duration: 1d
+  info: Gen 27:27-29
+
+- name: Jacob Serves Laban
+  id: jacob_serves_laban
+  start_after: isaac_blesses_jacob
+  end_before: life_of_isaac$
+  duration: 20y
+  info:
+    - Gen 31:38

@@ -13,18 +13,18 @@
 # duration (in years/months/days, formatted as "#y #m #d", in any order, e.g. "5d 3m 1y")
 # info (one or more strings)
 #
-# The start*/end* tags can accept ids of other entries within this file, augmented by ^/& modifiers.
+# The start*/end* tags can accept ids of other entries within this file, augmented by ^/$ modifiers.
 # E.g given two events, A and B:
 # name: A
 # end_before: B   # Event A ends before event B begins
 # end_before: ^B  # Event A ends before event B begins
-# end_before: B&  # Event A ends before event B ends (but not necessarily after it begins)
+# end_before: B$  # Event A ends before event B ends (but not necessarily after it begins)
 # end: ^B         # Event A ends when event B begins
-# end: B&         # Event A ends when event B ends
+# end: B$         # Event A ends when event B ends
 # end: B          # Event A ends sometime during event B
 # end_after: ^B   # Event A ends after event B begins  (but not necessarily before it ends)
 # end_after: B    # Event A ends after event B ends
-# end_after: B&   # Event A ends after event B ends
+# end_after: B$   # Event A ends after event B ends
 
 Records:
 - name: Creation
