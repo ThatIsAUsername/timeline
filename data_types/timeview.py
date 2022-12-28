@@ -263,16 +263,21 @@ class Timeview:
             if len(self.label_infos) > 1:
                 # Deconflict as needed to position each label.
                 deconflicted_rects = []
-                deconflict_up = False  # Cascade events downward; then we'll recenter the whole mess.
                 min_y = self.label_infos[0].label_rect.midleft[1]
                 max_y = self.label_infos[0].label_rect.midleft[1]
+
+                # Settings to determine how events are arranged.
+                deconflict_claw = False
+                center_new_events = False  # Whether new events should be centered vertically if possible, or continue outward.
+                deconflict_up = False
+
+                min_top = self.label_infos[0].label_rect.top
                 for li in self.label_infos:
-                    lr = li.label_rect
-                    count = 0
+                    lr: pygame.rect.Rect = li.label_rect
+                    if not center_new_events:
+                        lr.top = min_top
                     idx = lr.collidelist(deconflicted_rects)
                     while idx != -1:
-                        count += 1
-
                         # Find the rect we are hitting and move past it.
                         other: pygame.Rect = deconflicted_rects[idx]
                         if deconflict_up:
@@ -280,8 +285,10 @@ class Timeview:
                         else:
                             lr.top = other.bottom
                         idx = lr.collidelist(deconflicted_rects)
+                    deconflict_up = not deconflict_up if deconflict_claw else deconflict_up
                     min_y = lr.midleft[1] if lr.midleft[1] < min_y else min_y
                     max_y = lr.midleft[1] if lr.midleft[1] > max_y else max_y
+                    min_top = lr.top
                     deconflicted_rects.append(lr)
 
                 # Recenter the whole list of records vertically.
