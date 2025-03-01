@@ -53,7 +53,17 @@ class TimeReference:
         absolutes = absolutes or []
         for absolute in absolutes:
             tokens = absolute.split()
-            if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+
+            # If we are doing math ('+' or '-' appear as tokens) then it's probably not a date string.
+            # If there is only one numeric token (including +/-), then it's a year-only date string.
+            # If there are multiple tokens and none is '+' or '-', then it's a date string.
+            if '+' in tokens \
+                or '-' in tokens \
+                or (len(tokens) == 1
+                    and not tokens[0][0].isdigit()
+                    and not tokens[0][0] == '-'
+                    and not tokens[0][0] == '+'
+                    ):
                 # This must be a reference to another event.
                 tok = tokens[0]
                 offset_text = f"{absolute[len(tok):]}"  # Extract offset text if present.
@@ -130,8 +140,10 @@ class TimeReference:
             # monthrange returns a tuple of the weekday the month started, and the length of the month.
             weekday, day_max = monthrange(year_max, month_max)
         elif len(tokens) == 1:  # Expect YYYY or a record ID string.
-            if tokens[0].isdigit():
-                year_min = int(tokens[0])
+            token = tokens[0]
+            c0 = token[0]
+            if c0.isdigit() or c0 == '-' or c0 == '+':
+                year_min = int(token)
                 year_max = year_min
                 month_min = 1
                 month_max = 12
