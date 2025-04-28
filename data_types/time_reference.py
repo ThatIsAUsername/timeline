@@ -5,6 +5,32 @@ from data_types import TimePoint
 months = list(month_abbr)
 
 
+def is_year(token: str) -> bool:
+    if isinstance(token, List):
+        if len(token) == 1:
+            token = token[0]
+        else:
+            return False
+
+    # If this token starts with [0-9-+], then it's probably a year.
+    return (
+        token[0].isdigit()
+        or len(token) > 1 and (token[0] == '-' or token[0] == '+')
+        )
+
+
+def is_offset(tokens: List[str]) -> bool:
+    # If we are doing math ('+' or '-' appear as tokens) then it's probably an offset, not a date string.
+    # Note that offsets are relative to event references, so if is_offset returns true, so should is_event_ref.
+    return ('+' in tokens or '-' in tokens) and (tokens[0][0].isalpha() or tokens[0][0] == '^')
+
+
+def is_event_ref(tokens: List[str]) -> bool:
+    # If it's an offset (a +/- calculation), then it's referencing another event.
+    # If not a calculation, it may be a date or an event reference.
+    return is_offset(tokens) or len(tokens) == 1 and not is_year(tokens[0])
+
+
 class TimeReference:
     """
     Represents a point in time that may have some uncertainty.
@@ -54,17 +80,7 @@ class TimeReference:
         for absolute in absolutes:
             tokens = absolute.split()
 
-            # If we are doing math ('+' or '-' appear as tokens) then it's probably not a date string.
-            # If there is only one numeric token (including +/-), then it's a year-only date string.
-            # If there are multiple tokens and none is '+' or '-', then it's a date string.
-            if '+' in tokens \
-                or '-' in tokens \
-                or (len(tokens) == 1
-                    and not tokens[0][0].isdigit()
-                    and not tokens[0][0] == '-'
-                    and not tokens[0][0] == '+'
-                    ):
-                # This must be a reference to another event.
+            if is_event_ref(tokens):
                 tok = tokens[0]
                 offset_text = f"{absolute[len(tok):]}"  # Extract offset text if present.
 
@@ -101,17 +117,18 @@ class TimeReference:
             for tr in temp_refs:
                 # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
                 tokens = tr.split()
-                if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                if is_event_ref(tokens):
                     older_constraints.append(tr)
                 else:
                     old_min, old_max = self._parse_input(tokens)
-                    older_constraints.append(old_max if old_max is not None else tr)
+                    oc = old_max if old_max is not None else tr
+                    older_constraints.append(oc)
         if later:
             temp_refs = later if type(later) is list else [later]
             for tr in temp_refs:
                 # Try to resolve each time to a fixed date. If it's a reference, just store it for later.
                 tokens = tr.split()
-                if (len(tokens) == 1 and not tokens[0].isdigit()) or '+' in tokens or '-' in tokens:
+                if is_event_ref(tokens):
                     later_constraints.append(tr)
                 else:
                     l8r_min, l8r_max = self._parse_input(tr.split())

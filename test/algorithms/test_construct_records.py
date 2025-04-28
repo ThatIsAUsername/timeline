@@ -146,7 +146,7 @@ class TestNormalizeEvents(unittest.TestCase):
         self.assertEqual(rec.end.min, end_min_ans)
         self.assertEqual(rec.end.max, end_max_ans)
 
-    def test_bc(self):
+    def test_bc_absolute(self):
 
         # Arrange
         rec_id = 'before_christ'
@@ -155,6 +155,27 @@ class TestNormalizeEvents(unittest.TestCase):
         start_max_ans = TimePoint(year=-500, month=12, day=31)
         end_min_ans = TimePoint(year=-450, month=1, day=1)
         end_max_ans = TimePoint(year=-450, month=12, day=31)
+
+        # Act
+        evt_datas = [EventData.parse(rec) for rec in record_list]
+        records: Dict[str, EventRecord] = build_record_list(evt_datas)
+
+        # Assert
+        rec = records[rec_id]
+        self.assertEqual(rec.start.min, start_min_ans)
+        self.assertEqual(rec.start.max, start_max_ans)
+        self.assertEqual(rec.end.min, end_min_ans)
+        self.assertEqual(rec.end.max, end_max_ans)
+
+    def test_bc_relative(self):
+
+        # Arrange
+        rec_id = 'before_christ'
+        record_list = [{'name': 'Before Christ', 'id': rec_id, 'start_after': '-500', 'end_before': '-450'}]
+        start_min_ans = TimePoint(year=-500, month=12, day=31)
+        start_max_ans = TimePoint(year=-450, month=1, day=1)
+        end_min_ans = TimePoint(year=-500, month=12, day=31)
+        end_max_ans = TimePoint(year=-450, month=1, day=1)
 
         # Act
         evt_datas = [EventData.parse(rec) for rec in record_list]
